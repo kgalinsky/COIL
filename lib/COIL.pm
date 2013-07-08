@@ -4,6 +4,8 @@ use 5.006;
 use strict;
 use warnings FATAL => 'all';
 
+use Carp;
+
 =head1 NAME
 
 COIL - The great new COIL!
@@ -15,7 +17,6 @@ Version 0.01
 =cut
 
 our $VERSION = '0.01';
-
 
 =head1 SYNOPSIS
 
@@ -35,11 +36,30 @@ if you don't export anything, such as for a purely object-oriented module.
 
 =head1 SUBROUTINES/METHODS
 
-=head2 function1
-
 =cut
 
-sub function1 {
+sub _fh {
+    my ( $params, $mode ) = @_;
+    my $long_mode;
+
+    $mode ||= '<';
+    if    ( $mode eq '>' ) { $long_mode = 'writing' }
+    elsif ( $mode eq '<' ) { $long_mode = 'reading' }
+    else                   { croak qq{Invalid mode "$mode"} }
+
+    my $file = shift(@$params);
+    $file = \$file unless ( ref($file) );
+
+    my $type = ref($file);
+
+    if ( $type eq 'SCALAR' ) {
+        open my $fh, ( $mode || '<' ), $file
+          or croak qq{Unable to open file "$file" for $longmode};
+        return $fh;
+    }
+    if ( $type eq 'GLOB' ) { return $$file }
+
+    croak qq{Invalid type "$type"};
 }
 
 =head2 function2
@@ -138,4 +158,4 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =cut
 
-1; # End of COIL
+1;    # End of COIL
