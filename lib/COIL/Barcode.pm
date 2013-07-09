@@ -50,7 +50,7 @@ sub read_barcodes {
     my $fh = COIL::_fh( \@_ );
 
     my @barcodes;
-    foreach local $_ (<$fh>) {
+    while (local $_ = <$fh>) {
         my ($barcode_str) = (split)[-1];
         push @barcodes, [ split //, $barcode_str ];
     }
