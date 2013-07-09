@@ -35,6 +35,10 @@ sub validate_barcodes {
     foreach my $barcode ( @{ $_[0] } ) {
         validate_barcode($barcode);
     }
+
+    my %lengths;
+    foreach my $barcode (@{ $_[0] }) { $lengths{ scalar(@$barcode) } = 0 }
+    croak qq{Not all barcodes are of same length} if ( keys(%lengths) != 1 );
 }
 
 =head2 read_barcodes
@@ -50,7 +54,7 @@ sub read_barcodes {
     my $fh = COIL::_fh( \@_ );
 
     my @barcodes;
-    while (local $_ = <$fh>) {
+    while ( local $_ = <$fh> ) {
         my ($barcode_str) = (split)[-1];
         push @barcodes, [ split //, $barcode_str ];
     }
