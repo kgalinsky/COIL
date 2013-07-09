@@ -54,7 +54,7 @@ sub _fh {
 
     if ( $type eq 'SCALAR' ) {
         open my $fh, ( $mode || '<' ), $file
-          or croak qq{Unable to open file "$file" for $longmode};
+          or croak qq{Unable to open file "$file" for $long_mode};
         return $fh;
     }
     if ( $type eq 'GLOB' ) { return $$file }
