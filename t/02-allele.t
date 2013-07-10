@@ -3,8 +3,7 @@
 use strict;
 use warnings FATAL => 'all';
 
-use Test::More;
-plan tests => 1;
+use Test::More tests => 1;
 
 use COIL::Allele;
 
