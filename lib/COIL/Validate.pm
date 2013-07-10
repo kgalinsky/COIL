@@ -57,27 +57,49 @@ our $VAL_BARCODE_STR =
 
 our $VAL_BARCODE = {
     type      => Params::Validate::ARRAYREF,
-    callbacks => {
-        'allele validation' =>
-          sub { validate_pos( @{ $_[0] }, ($VAL_ALLELE) x @{ $_[0] } ) }
-    }
+    callbacks => { 'contains valid alleles' => \&_val_alleles }
 };
 
 our $VAL_BARCODES = {
     type      => Params::Validate::ARRAYREF,
     callbacks => {
-        'barcode validation' =>
-          sub { validate_pos( @{ $_[0] }, ($VAL_BARCODE) x @{ $_[0] } ) },
-        'barcodes same length' => sub {
-            my %l;
-            foreach my $b ( @{ $_[0] } ) { $l{ scalar(@$b) } = 1 }
-            keys(%l) == 1;
-          }
+        'contains valid barcodes' => \&_val_barcodes,
+        'barcodes same length'    => \&_val_barcodes_same_length
     }
 };
 
-sub val_allele   { validate_pos( @_, $VAL_ALLELE ) }
-sub val_barcode  { validate_pos( @_, $VAL_BARCODE ) }
-sub val_barcodes { validate_pos( @_, $VAL_BARCODES ) }
+sub val_allele { $_[0] =~ $RE_ALLELE }
+
+sub _val_alleles {
+    foreach my $a ( @{ $_[0] } ) { return unless val_allele($a) }
+    return 1;
+}
+
+sub val_barcode {
+    return unless ( ref( $_[0] ) eq 'ARRAY' );
+    return unless _val_alleles(@_);
+    return 1;
+}
+
+sub _val_barcodes {
+    foreach my $b ( @{ $_[0] } ) { return unless val_barcode($b) }
+    return 1;
+}
+
+sub val_barcodes {
+    return unless ( ref( $_[0] ) eq 'ARRAY' );
+    return unless _val_barcodes(@_);
+    return unless _val_barcodes_same_length(@_);
+    return 1;
+}
+
+# compare length of each barcode to that of first
+sub _val_barcodes_same_length {
+    my $l = scalar( @{ $_[0][0] } );
+    for ( my $i = 1 ; $i < @{ $_[0] } ; $i++ ) {
+        return if ( $l != scalar( @{ $_[0][1] } ) );
+    }
+    return 1;
+}
 
 1;
