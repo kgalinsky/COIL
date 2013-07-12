@@ -47,14 +47,17 @@ sub _fh {
     elsif ( $mode eq '<' ) { $long_mode = 'reading' }
     else                   { croak qq{Invalid mode "$mode"} }
 
-    my $file = shift(@$params);
-    $file = \$file unless ( ref($file) );
+    my $file;
+    {
+        my $a = shift(@$params);
+        $file = ref($a) ? $a : \$a;
+    }
 
     my $type = ref($file);
 
     if ( $type eq 'SCALAR' ) {
-        open my $fh, ( $mode || '<' ), $file
-          or croak qq{Unable to open file "$file" for $long_mode};
+        open my $fh, ( $mode || '<' ), $$file
+          or croak qq{Unable to open file "$$file" for $long_mode};
         return $fh;
     }
     if ( $type eq 'GLOB' ) { return $$file }
