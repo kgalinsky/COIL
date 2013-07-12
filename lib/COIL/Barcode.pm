@@ -4,42 +4,13 @@ use strict;
 use warnings;
 
 use Carp;
+use List::MoreUtils 'pairwise';
+use Params::Validate;
 
 use COIL;
+use COIL::Validate ':all';
 
 =head1 FUNCTIONS
-
-=head2 validate_barcode
-
-    validate_barcode($barcode);
-
-Validate the barcode and croak if bad.
-
-=head2 validate_barcodes
-
-    validate_barcodes($barcodes);
-
-Validate the barcodes and croak if bad.
-
-=cut
-
-sub validate_barcode {
-    croak 'Barcode not arrayref' unless ( ref( $_[0] ) eq 'ARRAY' );
-
-    foreach my $allele ( @{ $_[0] } ) {
-        croak qq{Invalid allele "$allele"} unless ( $allele =~ m/^[ACGTNX]$/ );
-    }
-}
-
-sub validate_barcodes {
-    foreach my $barcode ( @{ $_[0] } ) {
-        validate_barcode($barcode);
-    }
-
-    my %lengths;
-    foreach my $barcode (@{ $_[0] }) { $lengths{ scalar(@$barcode) } = 0 }
-    croak qq{Not all barcodes are of same length} if ( keys(%lengths) != 1 );
-}
 
 =head2 read_barcodes
 
@@ -59,8 +30,40 @@ sub read_barcodes {
         push @barcodes, [ split //, $barcode_str ];
     }
 
-    validate_barcodes( \@barcodes );
+    croak "Invalid barcodes found"
+      unless ( val_barcodes( \@barcodes ) );
+
     return \@barcodes;
+}
+
+=head2 barcodes2numerics
+
+    my $numerics = barcodes2numerics( \@major_alleles, \@barcodes );
+
+Convert barcodes to numeric representations
+
+=cut
+
+sub barcodes2numeric {
+    my ( $major_alleles, $barcodes ) =
+      validate_pos( @_, { type => Params::Validate::ARRAYREF }, $VAL_BARCODES );
+    my $converter = _make_converter_obj( $_[0] );
+    [ map { _barcode2numeric( $converter, $_ ) } @{ $_[1] } ];
+}
+
+sub _make_converter_obj {
+    [
+        map {
+            my @a;
+            @a[ ( 65, 67, 71, 84, 78, 88 ) ] = ( (1) x 4, 2, 3 );
+            $a[ ord($_) ] = 0;
+            \@a;
+        } @{ $_[0] }
+    ];
+}
+
+sub _barcode2numeric {
+    [ pairwise { $a->[ ord($b) ] } @{ $_[0] }, @{ $_[1] } ];
 }
 
 1;
