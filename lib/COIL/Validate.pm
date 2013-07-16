@@ -8,15 +8,23 @@ our @EXPORT_OK = qw/
   $RE_UNIT
   $RE_ALLELE
   $RE_BARCODE
+  $RE_NUC
+  $RE_SALLELE
 
   $VAL_ALLELE
   $VAL_BARCODE_STR
   $VAL_BARCODE
   $VAL_BARCODES
+  $VAL_SALLELE
+  $VAL_STRAIN
+  $VAL_STRAINS
 
   val_allele
   val_barcode
   val_barcodes
+  val_sallele
+  val_strain
+  val_strains
   /;
 
 our %EXPORT_TAGS = (
@@ -26,6 +34,8 @@ our %EXPORT_TAGS = (
           $RE_UNIT
           $RE_ALLELE
           $RE_BARCODE
+          $RE_NUC
+          $RE_SALLELE
           /
     ],
     val => [
@@ -34,6 +44,9 @@ our %EXPORT_TAGS = (
           $VAL_BARCODE_STR
           $VAL_BARCODE
           $VAL_BARCODES
+          $VAL_SALLELE
+          $VAL_STRAIN
+          $VAL_STRAINS
           /
     ],
     fun => [
@@ -41,6 +54,9 @@ our %EXPORT_TAGS = (
           val_allele
           val_barcode
           val_barcodes
+          val_sallele
+          val_strain
+          val_strains
           /
     ]
 );
@@ -75,6 +91,14 @@ our $VAL_SALLELE = { type => Params::Validate::SCALAR, regex => $RE_SALLELE };
 our $VAL_STRAIN = {
     type      => Params::Validate::ARRAYREF,
     callbacks => { 'contains valid alleles' => \&_val_salleles }
+};
+
+our $VAL_STRAINS = {
+    type      => Params::Validate::ARRAYREF,
+    callbacks => {
+        'contains valid barcodes' => \&_val_strains,
+        'barcodes same length'    => \&_val_barcodes_same_length
+    }
 };
 
 sub val_allele { $_[0] =~ $RE_ALLELE }
