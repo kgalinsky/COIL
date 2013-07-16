@@ -50,6 +50,8 @@ use Params::Validate;
 our $RE_UNIT    = qr/[ACGTNX]/;
 our $RE_ALLELE  = qr/^$RE_UNIT$/;
 our $RE_BARCODE = qr/^$RE_UNIT+$/;
+our $RE_NUC     = qr/[ACGT]/;
+our $RE_SALLELE = qr/^$RE_NUC$/;
 
 our $VAL_ALLELE = { type => Params::Validate::SCALAR, regex => $RE_ALLELE };
 our $VAL_BARCODE_STR =
@@ -66,6 +68,13 @@ our $VAL_BARCODES = {
         'contains valid barcodes' => \&_val_barcodes,
         'barcodes same length'    => \&_val_barcodes_same_length
     }
+};
+
+our $VAL_SALLELE = { type => Params::Validate::SCALAR, regex => $RE_SALLELE };
+
+our $VAL_STRAIN = {
+    type      => Params::Validate::ARRAYREF,
+    callbacks => { 'contains valid alleles' => \&_val_salleles }
 };
 
 sub val_allele { $_[0] =~ $RE_ALLELE }
@@ -99,6 +108,31 @@ sub _val_barcodes_same_length {
     for ( my $i = 1 ; $i < @{ $_[0] } ; $i++ ) {
         return if ( $l != scalar( @{ $_[0][1] } ) );
     }
+    return 1;
+}
+
+sub val_sallele { $_[0] =~ $RE_SALLELE }
+
+sub _val_salleles {
+    foreach my $a ( @{ $_[0] } ) { return unless val_sallele($a) }
+    return 1;
+}
+
+sub val_strain {
+    return unless ( ref( $_[0] ) eq 'ARRAY' );
+    return unless _val_salleles(@_);
+    return 1;
+}
+
+sub _val_strains {
+    foreach my $b ( @{ $_[0] } ) { return unless val_strain($b) }
+    return 1;
+}
+
+sub val_strains {
+    return unless ( ref( $_[0] ) eq 'ARRAY' );
+    return unless _val_strains(@_);
+    return unless _val_barcodes_same_length(@_);
     return 1;
 }
 
