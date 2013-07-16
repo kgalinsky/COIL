@@ -44,14 +44,19 @@ Convert barcodes to numeric representations
 
 =cut
 
-sub barcodes2numeric {
-    my ( $major_alleles, $barcodes ) =
-      validate_pos( @_, { type => Params::Validate::ARRAYREF }, $VAL_BARCODES );
-    my $converter = _make_converter_obj( $_[0] );
-    [ map { _barcode2numeric( $converter, $_ ) } @{ $_[1] } ];
+sub barcodes2numerics {
+    my ( $barcodes, $major_alleles ) =
+      validate_pos( @_, $VAL_BARCODES, $VAL_STRAIN );
+
+    unless ( @$major_alleles == @{ $barcodes->[0] } ) {
+        croak q{Major allele array doesn't correspond to barcode length.};
+    }
+
+    my $struct = _barcode2numeric_struct( $major_alleles );
+    [ map { _barcode2numeric( $struct, $_ ) } @$barcodes ];
 }
 
-sub _make_converter_obj {
+sub _barcode2numeric_struct {
     [
         map {
             my @a;
