@@ -7,6 +7,27 @@ use Carp;
 use Params::Validate;
 use COIL::Validate ':val';
 
+=head1 NAME
+
+	COIL::Tally::Allele - tally individual alleles and utilities
+
+=head1 SYNOPSIS
+
+Allele tallies are needed for converting barcodes to/from their numeric
+representations as well as for computing likelihoods for each assay.
+
+=cut
+
+=head1 CONSTRUCTORS
+
+=cut
+
+=head2 tally_barcodes
+
+	my $tally = COIL::Tally::Allele->tally_barcodes($barcodes);
+
+=cut
+
 sub tally_barcodes {
 	my $class = shift;
 	my ($barcodes) = validate_pos( @_, $VAL_BARCODES );
