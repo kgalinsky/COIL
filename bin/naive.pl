@@ -8,14 +8,14 @@ use COIL::Tally::Allele;
 use COIL::Likelihood::Allele;
 use COIL::Likelihood;
 
-my $barcodes = COIL::Barcode::read_barcodes( $ARGV[0] );
-my $TA       = COIL::Tally::Allele->tally_barcodes($barcodes);
-my $LA       = COIL::Likelihood::Allele->tally2likelihood($TA);
-my $LAE        = $LA->add_error();
+my $barcodes    = COIL::Barcode::read_barcodes( $ARGV[0] );
+my $TA          = COIL::Tally::Allele->tally_barcodes($barcodes);
+my $LA          = COIL::Likelihood::Allele->tally2likelihood($TA);
+my $LAE         = $LA->add_error();
 my $numerics    = $TA->barcodes2numerics($barcodes);
 my $likelihoods = $LAE->numerics_likelihoods($numerics);
 my $posteriors  = COIL::Likelihood::posteriors($likelihoods);
-my $MAPs = COIL::Likelihood::MAPs($posteriors);
+my $MAPs        = COIL::Likelihood::MAPs($posteriors);
 my $Cs = COIL::Likelihood::credible_intervals( $posteriors, $MAPs );
 
 print STDERR "Tally:\n";
