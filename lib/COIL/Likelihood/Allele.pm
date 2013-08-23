@@ -105,7 +105,8 @@ sub add_error {
         for ( my $i = 0 ; $i < @{ $self->[$c] } ; $i++ ) {
             $L->[$c][$i] = [
                 map {
-                    sum pairwise { $a * $b } @$_, @{ $self->[$c][$i] }
+                    log( sum pairwise { $a * exp($b) } @$_,
+                        @{ $self->[$c][$i] } )
                 } @$E
             ];
         }
