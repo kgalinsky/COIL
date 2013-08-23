@@ -4,22 +4,31 @@ use strict;
 use warnings;
 
 use COIL::Barcode;
-use COIL::Allele;
-use COIL::Drivers;
+use COIL::Tally::Allele;
+use COIL::Likelihood::Allele;
+use COIL::Likelihood;
 
 my $barcodes = COIL::Barcode::read_barcodes( $ARGV[0] );
-my $tallies  = COIL::Allele::tally($barcodes);
-my $A        = COIL::Allele->tallies2obj($tallies);
+my $TA       = COIL::Tally::Allele->tally_barcodes($barcodes);
+my $LA       = COIL::Likelihood::Allele->tally2likelihood($TA);
+my $LAE        = $LA->add_error();
+my $numerics    = $TA->barcodes2numerics($barcodes);
+my $likelihoods = $LA->numerics_likelihoods($numerics);
+my $posteriors  = COIL::Likelihood::posteriors($likelihoods);
+my $MAPs = COIL::Likelihood::MAPs($posteriors);
+my $Cs = COIL::Likelihood::credible_intervals( $posteriors, $MAPs );
 
-$A->write(*STDERR);
+print STDERR "Tally:\n";
+$TA->write(*STDERR);
+print STDERR "\n";
 
-my $lGis     = $A->log_likelihoods(5);
-my $lOis     = COIL::Allele::error_log_likelihoods( $lGis, .01 );
-my $numerics = COIL::Barcode::barcodes2numerics( $barcodes, $A->majors );
-my $lCGs = COIL::Drivers::naive( $lOis, $numerics );    # l(C|G) = log P(G|C)
-my $PCGs = COIL::Drivers::posteriors($lCGs);            # P(C|G)
-my $MAPs = COIL::Drivers::max_is($PCGs);
-my $Cs = COIL::Drivers::credible_intervals( $PCGs, $MAPs );
+print STDERR "Likelihood:\n";
+$LA->write(*STDERR);
+print STDERR "\n";
+
+print STDERR "Error Likelihood:\n";
+$LAE->write(*STDERR);
+print STDERR "\n";
 
 local $, = "\t";
 local $\ = "\n";
