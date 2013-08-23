@@ -35,13 +35,19 @@ Compute likelihoods for a barcode assuming independent alleles.
 sub tally2likelihood {
     my $class = shift;
     my ( $tally, @p ) = validate_pos( @_, 1, { default => {} } );
-    my %p = validate( @p, { max_COI => 5, padding => 0.5 } );
+    my %p = validate(
+        @p,
+        {
+            max_COI => { default => 5 },
+            padding => { default => 0.5 }
+        }
+    );
 
     my $max_COI = $p{max_COI};
     my $padding = $p{padding};
 
     my $self = bless [], $class;
-    for ( my $i = 0 ; $i < $tally ; $i++ ) {
+    for ( my $i = 0 ; $i < @$tally ; $i++ ) {
         my ( $p, $q ) = @{ $tally->[$i] }[ 2, 3 ];
         $p += $padding;
         $q += $padding;
@@ -64,5 +70,15 @@ sub tally2likelihood {
 
     return ($self);
 }
+
+=head1 METHODS
+
+=cut
+
+=head2 add_error
+
+    my $error_likelihood = $likelihood->add_error( $error );
+
+=cut
 
 1;
