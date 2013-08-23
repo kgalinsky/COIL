@@ -30,6 +30,8 @@ sub _fh {
     else                   { croak qq{Invalid mode "$mode"} }
 
     my $file = shift(@$params);
+    unless ($file) { return $mode eq '<' ? *STDIN : *STDOUT }    
+    
     my $type = ref($file) || ref(\$file);
 
     if ( $type eq 'SCALAR' ) {

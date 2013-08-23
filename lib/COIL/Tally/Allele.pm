@@ -9,6 +9,8 @@ use List::MoreUtils 'pairwise';
 use Params::Validate;
 use COIL::Validate ':val';
 
+use COIL '_fh';
+
 =head1 NAME
 
 	COIL::Tally::Allele - tally individual alleles and utilities
@@ -26,7 +28,7 @@ representations as well as for computing likelihoods for each assay.
 
 =head2 tally_barcodes
 
-	my $tally = COIL::Tally::Allele->tally_barcodes($barcodes);
+	my $TA = COIL::Tally::Allele->tally_barcodes($barcodes);
 
 =cut
 
@@ -77,7 +79,7 @@ sub tally_barcodes {
 
 =head2 barcodes2numerics
 
-	my $numerics = $tally->barcodes2numerics( \@barcodes );
+	my $numerics = $TA->barcodes2numerics( \@barcodes );
 
 =cut
 
@@ -107,6 +109,23 @@ sub _barcode2numeric_struct {
 sub _barcode2numeric {
     no warnings;
     [ pairwise { $a->[ ord($b) ] } @{ $_[0] }, @{ $_[1] } ];
+}
+
+=head2 write
+
+    $TA->write( $fh );
+
+=cut
+
+sub write {
+    my $self     = shift;
+    my $fh       = _fh( \@_ );
+
+    local $, = "\t";
+    local $\ = "\n";
+    foreach my $allele (@$self) {
+        print @$allele;
+    }
 }
 
 1;
