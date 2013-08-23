@@ -1,6 +1,5 @@
 package COIL;
 
-use 5.006;
 use strict;
 use warnings FATAL => 'all';
 
@@ -8,7 +7,7 @@ use Carp;
 
 =head1 NAME
 
-COIL - The great new COIL!
+COIL - Compute complexity of infection from molecular barcodes
 
 =head1 VERSION
 
@@ -18,25 +17,8 @@ Version 0.01
 
 our $VERSION = '0.01';
 
-=head1 SYNOPSIS
-
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
-
-    use COIL;
-
-    my $foo = COIL->new();
-    ...
-
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
-=head1 SUBROUTINES/METHODS
-
-=cut
+use Exporter 'import';
+our @EXPORT_OK = qw/ _fh /;
 
 sub _fh {
     my ( $params, $mode ) = @_;
@@ -60,13 +42,6 @@ sub _fh {
     croak qq{Invalid type "$type"};
 }
 
-=head2 function2
-
-=cut
-
-sub function2 {
-}
-
 =head1 AUTHOR
 
 Kevin Galinsky, C<< <galinsky at fas.harvard.edu> >>
@@ -77,15 +52,11 @@ Please report any bugs or feature requests to C<bug-coil at rt.cpan.org>, or thr
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=COIL>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
-
-
-
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
     perldoc COIL
-
 
 You can also look for information at:
 
@@ -109,9 +80,7 @@ L<http://search.cpan.org/dist/COIL/>
 
 =back
 
-
 =head1 ACKNOWLEDGEMENTS
-
 
 =head1 LICENSE AND COPYRIGHT
 
@@ -152,7 +121,6 @@ YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR
 CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR
 CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 
 =cut
 
