@@ -79,6 +79,41 @@ sub tally2likelihood {
 
 =cut
 
+=head2 add_error
+
+    my $E = $L->add_error();
+    my $E = $L->add_error( 0.05 );
+
+=cut
+
+sub add_error {
+    my $self = shift;
+    my ($e) = @_;
+
+    $e ||= .05;
+
+    # $E->[$i][$j] = P(G*=i|G=j)
+    my $E = [
+        [ 1 - 2 * $e, $e,         $e,         0 ],
+        [ $e,         1 - 2 * $e, $e,         0 ],
+        [ $e,         $e,         1 - 2 * $e, 0 ],
+        [ 0,          0,          0,          1 ]
+    ];
+
+    my $L = bless [], ref($self);
+    for ( my $c = 0 ; $c < @$self ; $c++ ) {
+        for ( my $i = 0 ; $i < @{ $self->[$c] } ; $i++ ) {
+            $L->[$c][$i] = [
+                map {
+                    sum pairwise { $a * $b } @$_, @{ $self->[$c][$i] }
+                } @$E
+            ];
+        }
+    }
+
+    return ($L);
+}
+
 =head2 numerics_likelihoods
 
     my $likelihoods = $L->numerics_likelihoods( $numerics );
