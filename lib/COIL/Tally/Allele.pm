@@ -60,7 +60,14 @@ sub tally_barcodes {
 
     for ( my $i = 0 ; $i < @seen ; $i++ ) {
         my @alleles = keys %{ $seen[$i] };
-        croak qq{Site "$i" not biallelic} unless ( @alleles == 2 );
+        if ( @alleles == 1 ) {
+            carp qq{Site $i not biallelic};
+            $alleles[1] = '?';
+        }
+        elsif ( @alleles == 0 ) { croak qq{No alleles at site $i} }
+        elsif ( @alleles > 2 ) {
+            croak qq{Multiallelic not supported at site $i};
+        }
 
         my ( $a, $b ) = @alleles;
         my ( $m, $n ) = @{ $tallies[$i] }{@alleles};
@@ -118,13 +125,13 @@ sub _barcode2numeric {
 =cut
 
 sub write {
-    my $self     = shift;
-    my $fh       = _fh( \@_ );
+    my $self = shift;
+    my $fh = _fh( \@_, '>' );
 
     local $, = "\t";
     local $\ = "\n";
     foreach my $allele (@$self) {
-        print @$allele;
+        print $fh @$allele;
     }
 }
 

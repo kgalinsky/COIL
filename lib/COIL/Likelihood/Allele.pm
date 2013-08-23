@@ -151,16 +151,18 @@ sub _numeric_likelihoods {
 
 sub write {
     my $self     = shift;
-    my $fh       = _fh( \@_ );
+    my $fh       = _fh( \@_, '>' );
     my ($digits) = @_;
     $digits ||= 2;
 
     for ( my $i = 0 ; $i < @{ $self->[0] } ; $i++ ) {
         for ( my $c = 0 ; $c < @$self ; $c++ ) {
-            if ($c != 0) { print "\t" } 
-            print join( '|', map { sprintf "\%.${digits}f", exp($_) } @{ $self->[$c][$i] }[ 0 .. 2 ] );
+            if ( $c != 0 ) { print $fh "\t" }
+            print $fh join( '|',
+                map { sprintf "\%.${digits}f", exp($_) }
+                  @{ $self->[$c][$i] }[ 0 .. 2 ] );
         }
-        print "\n";
+        print $fh "\n";
     }
 }
 
