@@ -21,6 +21,8 @@ our @EXPORT_VAL = qw/
   $VAL_SALLELE
   $VAL_STRAIN
   $VAL_STRAINS
+  $VAL_NUMERIC
+  $VAL_NUMERICS
   /;
 our @EXPORT_FUN = qw/ val_allele
   val_barcode
