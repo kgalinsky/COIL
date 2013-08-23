@@ -89,8 +89,8 @@ sub barcodes2numerics {
         croak q{Tally length doesn't correspond to barcode length.};
     }
 
-    my $struct = _barcode2numeric_struct( map { $_->[0] } @$self );
-    [ map { _barcode2numeric( $struct, $_ ) } @$barcodes ];
+    my $struct = _barcode2numeric_struct( [ map { $_->[0] } @$self ] );
+    return ( [ map { _barcode2numeric( $struct, $_ ) } @$barcodes ] );
 }
 
 sub _barcode2numeric_struct {
