@@ -4,6 +4,10 @@ use strict;
 use warnings;
 
 use Params::Validate;
+use COIL::Validate ':val';
+
+use List::Util qw/ sum /;
+use List::MoreUtils qw/ pairwise /;
 
 =head1 NAME
 
@@ -21,8 +25,8 @@ Compute likelihoods for a barcode assuming independent alleles.
 
 =head2 tally2likelihood
 
-	my $likelihood = COIL::Likelihood::Allele->tally2likelihood( $tally );
-	my $likelihood = COIL::Likelihood::Allele->tally2likelihood(
+	my $L = COIL::Likelihood::Allele->tally2likelihood( $tally );
+	my $L = COIL::Likelihood::Allele->tally2likelihood(
 	   $tally,
 	   {
 	       max_COI => 5,
@@ -75,10 +79,30 @@ sub tally2likelihood {
 
 =cut
 
-=head2 add_error
+=head2 numerics_likelihoods
 
-    my $error_likelihood = $likelihood->add_error( $error );
+    my $likelihoods = $L->numerics_likelihoods( $numerics );
 
 =cut
+
+sub numerics_likelihoods {
+    my $self = shift;
+    my ($numerics) = validate_pos( @_, $VAL_NUMERICS );
+
+    return ( [ map { $self->_numeric_likelihoods($_) } @$numerics ] );
+}
+
+sub _numeric_likelihoods {
+    my ( $self, $numeric ) = @_;
+
+    no warnings;
+    return (
+        [
+            map {
+                sum pairwise { $a->[$b] } @$_, @$numeric
+            } @$self
+        ]
+    );
+}
 
 1;
