@@ -28,9 +28,13 @@ representations as well as for computing likelihoods for each assay.
 
 =head2 tally_barcodes
 
-	my $TA = COIL::Tally::Allele->tally_barcodes($barcodes);
+	my $CTA = COIL::Tally::Allele->tally_barcodes($barcodes);
 
 =cut
+
+# A COIL::Tally::Allele object is an array of tuples:
+#
+# $CTA->[$i] = [ $A, $a, $N, $n ]
 
 sub tally_barcodes {
     my $class = shift;
@@ -86,7 +90,7 @@ sub tally_barcodes {
 
 =head2 barcodes2numerics
 
-	my $numerics = $TA->barcodes2numerics( \@barcodes );
+	my $numerics = $CTA->barcodes2numerics( \@barcodes );
 
 =cut
 
@@ -120,7 +124,7 @@ sub _barcode2numeric {
 
 =head2 write
 
-    $TA->write( $fh );
+    $CTA->write( $fh );
 
 =cut
 
