@@ -27,8 +27,8 @@ Compute likelihoods for a barcode assuming independent alleles.
 
 =head2 tally2likelihood
 
-	my $L = COIL::Likelihood::Allele->tally2likelihood( $tally );
-	my $L = COIL::Likelihood::Allele->tally2likelihood(
+	my $CLA = COIL::Likelihood::Allele->tally2likelihood( $tally );
+	my $CLA = COIL::Likelihood::Allele->tally2likelihood(
 	   $tally,
 	   {
 	       max_COI => 5,
@@ -37,6 +37,14 @@ Compute likelihoods for a barcode assuming independent alleles.
 	);
 
 =cut
+
+# A COIL::Likelihood::Allele object has the following structure:
+#
+# $CLA->[$c][$i][$g] = log P(G_i=g|C=c)
+#
+# This was chosen over $CLA->[$i][$c][$g]. Grouping things by SNP first has
+# benefits, but the key advantage of clustering by COI is that computing the
+# genotype likelihood (log P(G|C=c)) can be done by zipping with $CLA->[$c].
 
 sub tally2likelihood {
     my $class = shift;
@@ -83,8 +91,8 @@ sub tally2likelihood {
 
 =head2 add_error
 
-    my $E = $L->add_error();
-    my $E = $L->add_error( 0.05 );
+    my $CLA_E = $CLA->add_error();
+    my $CLA_E = $CLA->add_error( 0.05 );
 
 =cut
 
@@ -102,10 +110,10 @@ sub add_error {
         [ 0,          0,          0,          1 ]
     ];
 
-    my $L = bless [], ref($self);
+    my $CLA_E = bless [], ref($self);
     for ( my $c = 0 ; $c < @$self ; $c++ ) {
         for ( my $i = 0 ; $i < @{ $self->[$c] } ; $i++ ) {
-            $L->[$c][$i] = [
+            $CLA_E->[$c][$i] = [
                 map {
                     log( sum pairwise { $a * exp($b) } @$_,
                         @{ $self->[$c][$i] } )
@@ -114,12 +122,12 @@ sub add_error {
         }
     }
 
-    return ($L);
+    return ($CLA_E);
 }
 
 =head2 numerics_likelihoods
 
-    my $likelihoods = $L->numerics_likelihoods( $numerics );
+    my $likelihoods = $CLA->numerics_likelihoods( $numerics );
 
 =cut
 
@@ -145,7 +153,7 @@ sub _numeric_likelihoods {
 
 =head2 write
 
-    $L->write( $fh, $digits);
+    $CLA->write( $fh, $digits);
 
 =cut
 
