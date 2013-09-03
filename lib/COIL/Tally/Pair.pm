@@ -6,6 +6,8 @@ use warnings;
 use Params::Validate;
 use COIL::Validate ':val';
 
+use COIL '_fh';
+
 =head1 NAME
 
 =head1 SYNOPSIS
@@ -104,8 +106,31 @@ sub Fisher {
               );
         }
     }
-    
+
     return \@stats;
+}
+
+=head2 write
+
+=cut
+
+sub write {
+    my $self = shift;
+    my $fh = _fh( \@_, '>' );
+
+    local $, = "\t";
+    local $\ = "\n";
+    for ( my $i = 0 ; $i < $#$self ; $i++ ) {
+        for ( my $j = $i + 1 ; $j < @$self ; $j++ ) {
+            my $t = $self->[$i][$j];
+            print $i, $j,
+                '['
+              . $t->[0][0] . ':'
+              . $t->[0][1] . '/'
+              . $t->[1][0] . ':'
+              . $t->[1][1] . ']';
+        }
+    }
 }
 
 1;
