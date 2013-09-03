@@ -40,7 +40,7 @@ Compute likelihoods for a barcode assuming independent alleles.
 
 # A COIL::Likelihood::Allele object has the following structure:
 #
-# $CLA->[$c][$i][$g] = log P(G_i=g|C=c)
+# $CLA->[$c][$i][$g] = log P(G_i=g|C=c+1)
 #
 # This was chosen over $CLA->[$i][$c][$g]. Grouping things by SNP first has
 # benefits, but the key advantage of clustering by COI is that computing the
