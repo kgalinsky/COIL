@@ -28,7 +28,7 @@ sub read_barcodes {
     while ( local $_ = <$fh> ) {
         next if (m/^#/);
         my ($barcode_str) = (split)[-1];
-        push @barcodes, [ split //, $barcode_str ];
+        push @barcodes, [ split qr//, $barcode_str ];
     }
 
     croak "Invalid barcodes found"
