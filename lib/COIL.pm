@@ -20,6 +20,8 @@ our $VERSION = '0.01';
 use Exporter 'import';
 our @EXPORT_OK = qw/ _fh /;
 
+# helper function that opens file handle and spits out error messages
+
 sub _fh {
     my ( $params, $mode ) = @_;
     my $long_mode;
