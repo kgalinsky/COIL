@@ -156,6 +156,44 @@ sub _barcode2numeric {
     [ pairwise { $a->[ ord($b) ] } @{ $_[0] }, @{ $_[1] } ];
 }
 
+=head2 numerics2barcodes
+
+	my $barcodes = $CTA->numerics2barcodes( \@numerics );
+
+=cut
+
+
+sub numerics2barcodes {
+    my $self = shift;
+    my ($numerics) = validate_pos( @_, $VAL_NUMERICS );
+
+    unless ( @$self == @{ $numerics->[0] } ) {
+        croak q{Tally length doesn't correspond to barcode length.};
+    }
+
+    my $struct = _numeric2barcode_struct($self);
+    return ( [ map { _numeric2barcode( $struct, $_ ) } @$numerics ] );
+}
+
+sub _numeric2barcode_struct {
+    [ map { [ $_->[0], $_->[1], 'N', 'X' ] } @{ $_[0] } ];
+}
+
+sub _numeric2barcode {
+    no warnings;
+    [ pairwise { $a->[$b] } @{ $_[0] }, @{ $_[1] } ];
+}
+
+=head2 random_strain
+
+    my $strain = $CTA->random_strain();
+
+=cut
+
+sub random_strain {
+    [ map { $_->[ rand( $_->[2] + $_->[3] < $_->[3] ) ] } @{ $_[0] } ];
+}
+
 =head2 write
 
     $CTA->write( $fh );
