@@ -151,6 +151,38 @@ sub _numeric_likelihoods {
     );
 }
 
+=head2 random_numeric
+
+    my $numeric = $CLA->random_numeric( $COI );
+    my $numeric = $CLA->random_numeric( $COI, $failure );
+
+=cut
+
+sub random_numeric {
+    my $self = shift;
+    my ( $COI, $f ) =
+      validate_pos( @_, { regex => qr/^[1-9]\d*/ }, { default => 0 } );
+    return [ map { _random_numeric( $_, 1 + $f ) } @{ $self->[ $COI - 1 ] } ];
+}
+
+sub _random_numeric {
+    my ( $l, $t ) = @_;
+    my $r = rand($t);
+
+    for ( my $n = 0 ; $n < 4 ; $n++ ) {
+        my $p = exp( $l->[$n] );
+        return $n if ( $r < $p );
+        $r -= $p;
+    }
+
+    croak(
+        sprintf(
+            'Random value greater than probabilities: %g %g %g %g',
+            $l->[0], $l->[1], $l->[2], $l->[3]
+        )
+    );
+}
+
 =head2 write
 
     $CLA->write( $fh, $digits);
