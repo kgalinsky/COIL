@@ -4,7 +4,9 @@ use strict;
 use warnings;
 
 use Carp;
+use List::Util 'shuffle';
 use List::MoreUtils 'pairwise';
+use Math::Random 'random_beta';
 
 use Params::Validate;
 use COIL::Validate ':val';
@@ -82,6 +84,38 @@ sub tally_barcodes {
     }
 
     return ($self);
+}
+
+=head2 random_tally
+
+    my $CTA = COIL::Tally::Allele->random_tally( $n );
+    my $CTA = COIL::Tally::Allele->random_tally( $n, $alpha, $beta );
+
+=cut
+
+sub random_tally {
+    my $class = shift;
+    my ( $n, $a, $b ) = validate_pos(
+        @_,
+        { regex => qr/^[1-9]\d*$/ },
+        (
+            {
+                default   => 1,
+                callbacks => {
+                    'greater than 0' => sub { $_[0] > 0 }
+                }
+            }
+        ) x 2
+    );
+
+    return bless [
+        map {
+            $_ *= 100;
+            my ( $N, $n ) = $_ > 50 ? ( $_, 100 - $_ ) : ( 100 - $_, $_ );
+            my ( $A, $a ) = shuffle qw/ A C G T /;
+            [ $A, $a, $N, $n ];
+        } random_beta( $n, $a, $b )
+    ], $class;
 }
 
 =head1 METHODS
