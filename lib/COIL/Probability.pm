@@ -139,7 +139,8 @@ Return most likely COI.
 =cut
 
 sub mode {
-    ( reduce { $_[0][$a] < $_[0][$b] ? $b : $a } ( 0 .. $#{ $_[0] } ) ) + 1;
+    my $self = shift;
+    ( reduce { $self->[$a] < $self->[$b] ? $b : $a } ( 0 .. $#$self ) ) + 1;
 }
 
 =head2 credible_interval
@@ -165,20 +166,21 @@ sub credible_interval {
 
     $mode--;
     my $lower = my $upper = $mode;
-    my $conf = $self->[$mode];
+    my $conf = exp( $self->[$mode] );
 
     while ( $conf < $threshold ) {
-        if    ( $lower == 0 )       { $conf += $self->[ ++$upper ] }
-        elsif ( $upper == $#$self ) { $conf += $self->[ --$lower ] }
+        if    ( $lower == 0 )       { $conf += exp( $self->[ ++$upper ] ) }
+        elsif ( $upper == $#$self ) { $conf += exp( $self->[ --$lower ] ) }
         else {
             if ( $self->[ $lower - 1 ] >= $self->[ $upper + 1 ] ) {
-                $conf += $self->[ --$lower ];
+                $conf += exp( $self->[ --$lower ] );
             }
-            else { $conf += $self->[ ++$upper ] }
+
+            else { $conf += exp( $self->[ ++$upper ] ) }
         }
     }
 
-    [ $lower + 1, $upper + 1, $conf ]
+    [ $lower + 1, $upper + 1, $conf ];
 }
 
 =head2 COIs
