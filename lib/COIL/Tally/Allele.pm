@@ -4,9 +4,10 @@ use strict;
 use warnings;
 
 use Carp;
-use List::Util 'shuffle';
-use List::MoreUtils 'pairwise';
-use Math::Random 'random_beta';
+use Scalar::Util qw/ looks_like_number /;
+use List::Util qw/ shuffle sum /;
+use List::MoreUtils qw/ pairwise /;
+use Math::Random qw/ random_beta /;
 
 use Params::Validate;
 use COIL::Validate ':val';
@@ -100,10 +101,8 @@ sub random_tally {
         { regex => qr/^[1-9]\d*$/ },
         (
             {
-                default   => 1,
-                callbacks => {
-                    'greater than 0' => sub { $_[0] > 0 }
-                }
+                default => 1,
+                %$VAL_POS_REAL
             }
         ) x 2
     );
@@ -116,6 +115,22 @@ sub random_tally {
             [ $A, $a, $N, $n ];
         } random_beta( $n, $a, $b )
     ], $class;
+}
+
+=head2 uniform_tally
+
+    my $CTA = COIL::Tally::Allele->random_tally( $n, $p );
+    my $CTA = COIL::Tally::Allele->random_tally( $n, $p, $A, $a );
+
+=cut
+
+sub uniform_tally {
+    my $class = shift;
+    my ( $n, $p, $A, $a ) = validate_pos(
+        @_, $VAL_POS_INT, $VAL_PROB,
+        { %$VAL_NUC, default => 'A' },
+        { %$VAL_NUC, default => 'T' },
+    );
 }
 
 =head1 METHODS
@@ -162,7 +177,6 @@ sub _barcode2numeric {
 
 =cut
 
-
 sub numerics2barcodes {
     my $self = shift;
     my ($numerics) = validate_pos( @_, $VAL_NUMERICS );
@@ -194,9 +208,39 @@ sub random_strain {
     [ map { $_->[ rand( $_->[2] + $_->[3] < $_->[3] ) ] } @{ $_[0] } ];
 }
 
+=head1 IO
+
+=cut
+
+=head2 read
+
+    my $CTA = COIL::Tally::Allele->read( $fh );
+
+=cut
+
+sub read {
+    my $class = shift;
+    my $fh = _fh( @_, '<' );
+
+    my $self = bless [], $class;
+
+    local $/ = "\n";
+    while ( local $_ = <$fh> ) {
+        push @$self, [split];    # TODO validate tally lines
+    }
+
+    return $self;
+}
+
 =head2 write
 
     $CTA->write( $fh );
+
+A direct output of the tally object.
+
+    A   C   20  5
+    G   T   34  6
+    ...
 
 =cut
 
@@ -208,6 +252,29 @@ sub write {
     local $\ = "\n";
     foreach my $allele (@$self) {
         print $fh @$allele;
+    }
+}
+
+=head2 write_density
+
+    $cta->write_density( $fh );
+
+Write just the alleles and the density of the first allele. This will generally
+be the major allele frequency.
+
+    A   C   .8
+    G   T   .85
+
+=cut
+
+sub write_density {
+    my $self = shift;
+    my $fh = _fh( \@_, '>' );
+
+    local $, = "\t";
+    local $\ = "\n";
+    foreach my $allele (@$self) {
+        print $fh @$allele[ 0, 1 ], $allele->[2] / sum( @$allele[ 2, 3 ] );
     }
 }
 
