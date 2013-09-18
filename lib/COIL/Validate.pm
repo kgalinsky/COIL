@@ -14,6 +14,8 @@ our @EXPORT_VAL = qw/
   $VAL_NON_NEG_INT
   $VAL_PROB
   $VAL_POS_REAL
+  $VAL_NON_POS_REAL
+  $VAL_NON_POS_REALS
 
   $VAL_NUC
   $VAL_ALLELE
@@ -70,6 +72,18 @@ our $VAL_POS_REAL = {
         '>0'                  => sub { ( $_[0] > 0 ) }
     }
 };
+our $VAL_NON_POS_REAL = {
+    callbacks => {
+        'looks like a number' => sub { looks_like_number( $_[0] ) },
+        '<=0'                 => sub { ( $_[0] <= 0 ) }
+    }
+};
+our $VAL_NON_POS_REALS = {
+    type => Params::Validate::ARRAYREF,
+    callbacks => { 'contains non positive reals' => \&val_non_pos_reals }
+};
+
+sub val_non_pos_real { looks_like_number( $_[0] ) && ( $_[0] <= 0 ) }
 
 # validate strings
 our $RE_NUC     = qr/[ACGT]/;
@@ -178,11 +192,12 @@ sub _gen_val_mult {
     };
 }
 
-*_val_alleles  = _gen_val_mult( \&val_allele );
-*_val_salleles = _gen_val_mult( \&val_sallele );
-*_val_nalleles = _gen_val_mult( \&val_nallele );
-*_val_barcodes = _gen_val_mult( \&val_barcode );
-*_val_strains  = _gen_val_mult( \&val_strain );
-*_val_numerics = _gen_val_mult( \&val_numeric );
+*val_non_pos_reals = _gen_val_mult( \&val_non_pos_real );
+*_val_alleles      = _gen_val_mult( \&val_allele );
+*_val_salleles     = _gen_val_mult( \&val_sallele );
+*_val_nalleles     = _gen_val_mult( \&val_nallele );
+*_val_barcodes     = _gen_val_mult( \&val_barcode );
+*_val_strains      = _gen_val_mult( \&val_strain );
+*_val_numerics     = _gen_val_mult( \&val_numeric );
 
 1;
