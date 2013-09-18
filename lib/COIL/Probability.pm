@@ -30,9 +30,9 @@ Create and manipulate COI probabilities.
     my $CP = COIL::Probability->poisson( $lambda );
     my $CP = COIL::Probability->poisson( $lambda,
         { # how we determine the max COI to generate
-            max => 10,    # hard limit
-            CDF => .99,   # CDF >= .99
-            PDF => .001   # PDF <  .001
+            max_COI => 10,    # hard limit
+            CDF     => .99,   # CDF >= .99
+            PDF     => .001   # PDF <  .001
         } );
 
 Generate a distribution of COIs using a *truncated* Poisson distribution. COI=0
@@ -48,14 +48,14 @@ sub poisson {
     my %p = validate(
         @p,
         {
-            max => { optional => 1, %$VAL_POS_INT },
+            max_COI => { optional => 1, %$VAL_POS_INT },
             CDF => { optional => 1, %$VAL_PROB },
             PDF => { optional => 1, %$VAL_PROB }
         }
     );
 
-    $p{max} = 5 unless ( $p{max} || $p{CDF} || $p{PDF} );
-    $p{max} ||= 100;
+    $p{max_COI} = 5 unless ( $p{max} || $p{CDF} || $p{PDF} );
+    $p{max_COI} ||= 100;
     $p{CDF} ||= 1;
     $p{PDF} ||= 0;
 
@@ -84,16 +84,16 @@ sub poisson {
 
 =head2 uniform
 
-    my $CP = COIL::Probability->uniform( $max );
+    my $CP = COIL::Probability->uniform( $max_COI );
 
-Discrete Uniform( 1, max ).
+Discrete Uniform( 1, max_COI ).
 
 =cut
 
 sub uniform {
     my $class = shift;
-    my ($max) = validate_pos( @_, $VAL_POS_INT );
-    return bless [ ( log( 1 / $max ) ) x $max ], $class;
+    my ($max_COI) = validate_pos( @_, $VAL_POS_INT );
+    return bless [ ( log( 1 / $max_COI ) ) x $max_COI ], $class;
 }
 
 =head1 METHODS
