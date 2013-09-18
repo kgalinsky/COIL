@@ -14,6 +14,7 @@ our @EXPORT_VAL = qw/
   $VAL_NON_NEG_INT
   $VAL_PROB
   $VAL_POS_REAL
+  $VAL_NON_NEG_REAL
   $VAL_NON_POS_REAL
   $VAL_NON_POS_REALS
 
@@ -72,6 +73,12 @@ our $VAL_POS_REAL = {
         '>0'                  => sub { ( $_[0] > 0 ) }
     }
 };
+our $VAL_NON_NEG_REAL = {
+    callbacks => {
+        'looks like a number' => sub { looks_like_number( $_[0] ) },
+        '>=0' => sub { ( $_[0] >= 0 ) }
+    }
+};
 our $VAL_NON_POS_REAL = {
     callbacks => {
         'looks like a number' => sub { looks_like_number( $_[0] ) },
@@ -79,7 +86,7 @@ our $VAL_NON_POS_REAL = {
     }
 };
 our $VAL_NON_POS_REALS = {
-    type => Params::Validate::ARRAYREF,
+    type      => Params::Validate::ARRAYREF,
     callbacks => { 'contains non positive reals' => \&val_non_pos_reals }
 };
 
