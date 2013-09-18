@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Params::Validate;
+use COIL::Validate ':val';
 
 =head1 NAME
 
@@ -31,8 +32,8 @@ sub tally2likelihood {
     my %p = validate(
         @p,
         {
-            max_COI => { default => 5 },
-            padding => { default => 0.5 }
+            max_COI => { default => 5,   %$VAL_POS_INT },
+            padding => { default => 0.5, %$VAL_NON_NEG_REAL }
         }
     );
 
