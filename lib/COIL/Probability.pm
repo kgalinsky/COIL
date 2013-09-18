@@ -5,7 +5,7 @@ use warnings;
 
 use Carp;
 
-use List::Util qw/ reduce sum /;
+use List::Util qw/ max min reduce sum /;
 use List::MoreUtils qw/ pairwise /;
 
 use Params::Validate;
@@ -113,9 +113,18 @@ sub posterior {
     croak '|posterior| != |likelihood|'
       unless ( $#$self == $#$l );
 
+    # compute posterior
+    # P(A|B) ~ L(A|B)P(A)
+    # log P(A|B) ~ log(L(A|B)) + log(P(A))
     no warnings 'once';
     my $posterior = [ pairwise { $a + $b } @$self, @$l ];
-    my $scale = log sum map { exp $_ } @$posterior;
+
+    # first scale so max log prob is 0 to avoid rounding errors
+    my $scale = max @$posterior;
+    $_ -= $scale foreach (@$posterior);
+
+    # scale so probabilities sum to 1
+    $scale = log sum map { exp $_ } @$posterior;
     $_ -= $scale foreach (@$posterior);
 
     return bless $posterior, ref($self);
@@ -131,6 +140,45 @@ Return most likely COI.
 
 sub mode {
     ( reduce { $_[0][$a] < $_[0][$b] ? $b : $a } ( 0 .. $#{ $_[0] } ) ) + 1;
+}
+
+=head2 credible_interval
+
+    my $COI_credible_interval = $CP->credible_interval();
+    my $COI_credible_interval = $CP->credible_interval( 0.95 );
+    my $COI_credible_interval = $CP->credible_interval( 0.95, $mode );
+
+Return credible interval.
+
+=cut
+
+sub credible_interval {
+    my $self = shift;
+    my ( $threshold, $mode ) = validate_pos(
+        @_,
+        { default  => 0.95, %$VAL_PROB },
+        { optional => 1,    %$VAL_POS_INT }
+    );
+
+    if ($mode) { croak 'Mode out of range' unless ( $mode <= @$self ) }
+    else       { $mode = $self->mode() }
+
+    $mode--;
+    my $lower = my $upper = $mode;
+    my $conf = $self->[$mode];
+
+    while ( $conf < $threshold ) {
+        if    ( $lower == 0 )       { $conf += $self->[ ++$upper ] }
+        elsif ( $upper == $#$self ) { $conf += $self->[ --$lower ] }
+        else {
+            if ( $self->[ $lower - 1 ] >= $self->[ $upper + 1 ] ) {
+                $conf += $self->[ --$lower ];
+            }
+            else { $conf += $self->[ ++$upper ] }
+        }
+    }
+
+    [ $lower + 1, $upper + 1, $conf ]
 }
 
 =head2 COIs
