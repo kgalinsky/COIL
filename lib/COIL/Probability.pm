@@ -3,6 +3,11 @@ package COIL::Probability;
 use strict;
 use warnings;
 
+use Carp;
+
+use List::Util qw/ sum /;
+use List::MoreUtils qw/ pairwise /;
+
 use Params::Validate;
 use COIL::Validate ':val';
 
@@ -88,12 +93,33 @@ Discrete Uniform( 1, max ).
 sub uniform {
     my $class = shift;
     my ($max) = validate_pos( @_, $VAL_POS_INT );
-    bless [ ( log( 1 / $max ) ) x $max ], $class;
+    return bless [ ( log( 1 / $max ) ) x $max ], $class;
 }
 
 =head1 METHODS
 
 =cut
+
+=head2 posterior
+
+    my $CP2 = $CP->posterior( $log_likelihood );
+
+=cut
+
+sub posterior {
+    my $self = shift;
+    my ($l) = validate_pos( @_, $VAL_NON_POS_REALS );
+
+    croak '|posterior| != |likelihood|'
+      unless ( $#$self == $#$l );
+
+    no warnings 'once';
+    my $posterior = [ pairwise { $a + $b } @$self, @$l ];
+    my $scale = log sum map { exp $_ } @$posterior;
+    $_ -= $scale foreach (@$posterior);
+
+    return bless $posterior, ref($self);
+}
 
 =head2 COIs
 
