@@ -5,7 +5,7 @@ use warnings;
 
 use Carp;
 
-use List::Util qw/ sum /;
+use List::Util qw/ reduce sum /;
 use List::MoreUtils qw/ pairwise /;
 
 use Params::Validate;
@@ -49,15 +49,15 @@ sub poisson {
         @p,
         {
             max_COI => { optional => 1, %$VAL_POS_INT },
-            CDF => { optional => 1, %$VAL_PROB },
-            PDF => { optional => 1, %$VAL_PROB }
+            CDF     => { optional => 1, %$VAL_PROB },
+            PDF     => { optional => 1, %$VAL_PROB }
         }
     );
 
     $p{max_COI} = 5 unless ( $p{max} || $p{CDF} || $p{PDF} );
     $p{max_COI} ||= 100;
-    $p{CDF} ||= 1;
-    $p{PDF} ||= 0;
+    $p{CDF}     ||= 1;
+    $p{PDF}     ||= 0;
 
     # p = f(x)/(1-f(0))
     # log(p) = log(f(x)) - log(1-f(0))
@@ -67,7 +67,7 @@ sub poisson {
     my $log_lambda = log($lambda);
 
     my $self = bless [], $class;
-    for ( my $i = 1 ; $i <= $p{max} ; $i++ ) {
+    for ( my $i = 1 ; $i <= $p{max_COI} ; $i++ ) {
         $log_p += $log_lambda - log($i);
         my $p = exp($log_p);
 
@@ -119,6 +119,18 @@ sub posterior {
     $_ -= $scale foreach (@$posterior);
 
     return bless $posterior, ref($self);
+}
+
+=head2 mode
+
+    my $COI = $CP->mode();
+
+Return most likely COI.
+
+=cut
+
+sub mode {
+    ( reduce { $_[0][$a] < $_[0][$b] ? $b : $a } ( 0 .. $#{ $_[0] } ) ) + 1;
 }
 
 =head2 COIs
