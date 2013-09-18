@@ -17,7 +17,7 @@ use COIL '_fh';
 
 =head1 SYNOPSIS
 
-Compute likelihoods for a barcode assuming independent alleles.
+Compute log likelihoods for a barcode assuming independent alleles.
 
 =cut
 
@@ -52,8 +52,8 @@ sub tally2likelihood {
     my %p = validate(
         @p,
         {
-            max_COI => { default => 5 },
-            padding => { default => 0.5 }
+            max_COI => { default => 5,   %$VAL_POS_INT },
+            padding => { default => 0.5, %$VAL_NON_NEG_REAL }
         }
     );
 
@@ -98,9 +98,13 @@ sub tally2likelihood {
 
 sub add_error {
     my $self = shift;
-    my ($e) = @_;
-
-    $e ||= .05;
+    my ($e) = validate_pos(
+        @_,
+        {
+            default => 0.05,
+            %$VAL_PROB
+        }
+    );
 
     # $E->[$i][$j] = P(G*=i|G=j)
     my $E = [
@@ -129,6 +133,8 @@ sub add_error {
 
     my $likelihoods = $CLA->numerics_likelihoods( $numerics );
 
+Compute log likelihoods at different COIs for each numeric.
+
 =cut
 
 sub numerics_likelihoods {
@@ -154,22 +160,22 @@ sub _numeric_likelihoods {
 =head2 random_numeric
 
     my $numeric = $CLA->random_numeric( $COI );
-    my $numeric = $CLA->random_numeric( $COI, $failure );
+
+Generate a random numeric at a particular COI.
 
 =cut
 
 sub random_numeric {
     my $self = shift;
-    my ( $COI, $f ) =
-      validate_pos( @_, { regex => qr/^[1-9]\d*/ }, { default => 0 } );
-    return [ map { _random_numeric( $_, 1 + $f ) } @{ $self->[ $COI - 1 ] } ];
+    my ($COI) = validate_pos( @_, $VAL_POS_INT );
+    return [ map { _random_numeric($_) } @{ $self->[ $COI - 1 ] } ];
 }
 
 sub _random_numeric {
-    my ( $l, $t ) = @_;
-    my $r = rand($t);
+    my ($l) = @_;
+    my $r = rand(1);
 
-    for ( my $n = 0 ; $n < 4 ; $n++ ) {
+    for ( my $n = 0 ; $n < 3 ; $n++ ) {
         my $p = exp( $l->[$n] );
         return $n if ( $r < $p );
         $r -= $p;
@@ -177,8 +183,8 @@ sub _random_numeric {
 
     croak(
         sprintf(
-            'Random value greater than probabilities: %g %g %g %g',
-            $l->[0], $l->[1], $l->[2], $l->[3]
+            'Random value greater than probabilities: %g %g %g',
+            $l->[0], $l->[1], $l->[2]
         )
     );
 }
@@ -190,10 +196,9 @@ sub _random_numeric {
 =cut
 
 sub write {
-    my $self     = shift;
-    my $fh       = _fh( \@_, '>' );
-    my ($digits) = @_;
-    $digits ||= 2;
+    my $self = shift;
+    my $fh = _fh( \@_, '>' );
+    my ($digits) = validate_pos( @_, { default => 2, %$VAL_POS_INT } );
 
     for ( my $i = 0 ; $i < @{ $self->[0] } ; $i++ ) {
         for ( my $c = 0 ; $c < @$self ; $c++ ) {
