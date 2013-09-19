@@ -4,11 +4,9 @@ use strict;
 use warnings;
 
 use Carp;
-use List::MoreUtils 'pairwise';
-use Params::Validate;
 
 use COIL '_fh';
-use COIL::Validate ':all';
+use COIL::Validate ':fun';
 
 =head1 FUNCTIONS
 
