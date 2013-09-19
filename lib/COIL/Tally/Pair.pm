@@ -93,7 +93,7 @@ use Text::NSP::Measures::2D::Fisher::twotailed;
 
 sub Fisher {
     my $self = shift;
-    return [
+    return bless [
         map {
             my $n11 = $_->[0][0];
             my $n12 = $_->[0][1];
@@ -111,7 +111,7 @@ sub Fisher {
                 npp => $npp
             );
         } @$self
-    ];
+    ], 'COIL::Pair';
 }
 
 package COIL::Tally::Pair::Unit;
