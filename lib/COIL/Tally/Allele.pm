@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Carp;
-use Scalar::Util qw/ looks_like_number /;
 use List::Util qw/ shuffle sum /;
 use List::MoreUtils qw/ pairwise /;
 use Math::Random qw/ random_beta /;
@@ -51,7 +50,7 @@ sub tally_barcodes {
 
         for ( my $i = 0 ; $i < @$barcode ; $i++ ) {
             my $snp = $barcode->[$i];
-            if ( $snp =~ m/[ACGT]/ ) { $seen[$i]{$snp} = 1 }
+            if ( $snp =~ m/[ACGT]/ ) { $tallies[$i]{$snp} ||= 0 }
             elsif ( $snp eq 'N' ) { $seen_n = 1 }
         }
 
@@ -63,34 +62,16 @@ sub tally_barcodes {
         }
     }
 
-    my $self = bless [], $class;
-
-    for ( my $i = 0 ; $i < @seen ; $i++ ) {
-        my @alleles = keys %{ $seen[$i] };
-        if ( @alleles == 1 ) {
-            carp qq{Site $i not biallelic};
-            $alleles[1] = '?';
-        }
-        elsif ( @alleles == 0 ) { croak qq{No alleles at site $i} }
-        elsif ( @alleles > 2 ) {
-            croak qq{Multiallelic not supported at site $i};
-        }
-
-        my ( $a, $b ) = @alleles;
-        my ( $m, $n ) = @{ $tallies[$i] }{@alleles};
-        $m ||= 0;
-        $n ||= 0;
-
-        push @$self, $m > $n ? [ $a, $b, $m, $n ] : [ $b, $a, $n, $m ];
-    }
-
-    return ($self);
+    return bless [ map { "${class}::Unit"->new_hash($_) } @tallies ], $class;
 }
 
 =head2 random_tally
 
     my $CTA = COIL::Tally::Allele->random_tally( $n );
     my $CTA = COIL::Tally::Allele->random_tally( $n, $alpha, $beta );
+
+Create a random tally with minor allele frequencies sampled from a Beta
+distribution.
 
 =cut
 
@@ -109,10 +90,8 @@ sub random_tally {
 
     return bless [
         map {
-            $_ *= 100;
-            my ( $N, $n ) = $_ > 50 ? ( $_, 100 - $_ ) : ( 100 - $_, $_ );
             my ( $A, $a ) = shuffle qw/ A C G T /;
-            [ $A, $a, $N, $n ];
+            "${class}::Unit"->new_prob( $_, $A, $a );
         } random_beta( $n, $a, $b )
     ], $class;
 }
@@ -131,6 +110,9 @@ sub uniform_tally {
         { %$VAL_NUC, default => 'A' },
         { %$VAL_NUC, default => 'T' },
     );
+
+    return bless [ map { "${class}::Unit"->new_prob( $p, $A, $a ) } (0) x $n ],
+      $class;
 }
 
 =head1 METHODS
@@ -277,5 +259,58 @@ sub write_density {
         print $fh @$allele[ 0, 1 ], $allele->[2] / sum( @$allele[ 2, 3 ] );
     }
 }
+
+package COIL::Tally::Allele::Unit;
+
+use strict;
+use warnings;
+
+use Carp;
+
+sub new {
+    my $class = shift;
+    bless [@_], $class;
+}
+
+sub new_hash {
+    my $class = shift;
+    my ($tally) = @_;
+
+    my @alleles = keys %$tally;
+
+    if ( @alleles == 1 ) {
+        carp qq{Not biallelic};
+        $alleles[1] = '?';
+    }
+
+    elsif ( @alleles == 0 ) { croak qq{No alleles} }
+    elsif ( @alleles > 2 ) {
+        croak qq{Multiallelic not supported};
+    }
+
+    my ( $a, $b ) = @alleles;
+    my ( $m, $n ) = @$tally{@alleles};
+    $m ||= 0;
+    $n ||= 0;
+
+    my $self = $m > $n ? [ $a, $b, $m, $n ] : [ $b, $a, $n, $m ];
+    bless $self, $class;
+}
+
+sub new_prob {
+    my $class = shift;
+    my ( $p, $A, $a ) = @_;
+
+    my $N = 100 * $p;
+    my $n = 100 - $N;
+
+    my $self = $p >= .5 ? [ $A, $a, $N, $n ] : [ $a, $A, $n, $N ];
+    bless $self, $class;
+}
+
+sub major_allele { $_[0][0] }
+sub minor_allele { $_[0][1] }
+sub major_count  { $_[0][2] }
+sub minor_count  { $_[0][3] }
 
 1;
