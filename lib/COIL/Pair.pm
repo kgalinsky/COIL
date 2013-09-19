@@ -3,6 +3,8 @@ package COIL::Pair;
 use strict;
 use warnings;
 
+use COIL '_fh';
+
 =head1 NAME
 
     COIL::Pair - base class for objects that deal with pairs of alleles

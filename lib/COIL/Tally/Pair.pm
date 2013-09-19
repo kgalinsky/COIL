@@ -8,8 +8,6 @@ use base 'COIL::Pair';
 use Params::Validate;
 use COIL::Validate ':val';
 
-use COIL '_fh';
-
 =head1 NAME
 
 =head1 SYNOPSIS
