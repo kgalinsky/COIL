@@ -3,6 +3,8 @@ package COIL::Tally::Pair;
 use strict;
 use warnings;
 
+use base 'COIL::Pair';
+
 use Params::Validate;
 use COIL::Validate ':val';
 
@@ -112,26 +114,6 @@ sub Fisher {
             );
         } @$self
     ];
-}
-
-=head2 write
-
-=cut
-
-sub write {
-    my $self = shift;
-    my $fh = _fh( \@_, '>' );
-
-    local $, = "\t";
-    local $\ = "\n";
-
-    my ( $i, $j ) = ( 1, 0 );
-    foreach my $t (@$self) {
-        print $i, $j, $t;
-
-        $j++;
-        if ( $i == $j ) { $i++; $j = 0; }
-    }
 }
 
 package COIL::Tally::Pair::Unit;
