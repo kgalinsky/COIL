@@ -11,6 +11,35 @@ use COIL '_fh';
 
 =head1 SYNOPSIS
 
+    $pair->write();
+
+=head1 DESCRIPTION
+
+It is sometimes useful to deal with pairs of alleles in COIL. There were two
+options for handling this. One is to make a 2D array. The other possibility is
+a 1D array with a special indexing. In order for map to work properly, the
+latter is preferable.
+
+A COIL::Pair object is an array of counts stores the bottom-left off-diagonal
+elements of a 2D matrix. The numbering is:
+
+         0   1   2   3
+      +---+---+---+---+---+
+    0 | X |   |   |   |...|
+      +---+---+---+---+---+
+    1 | 0 | X |   +   +...|
+      +---+---+---+---+---+
+M = 2 | 1 | 2 | X |   |...|
+      +---+---+---+---+---+
+    3 | 3 | 4 | 5 | X |...|
+      +---+---+---+---+---+
+      |...|...|...|...|...|
+      +---+---+---+---+---+
+
+To map M[i][j] = P[k]:
+
+    k = (i^2)/2-i/2+j
+
 =cut
 
 =head2 write

@@ -24,26 +24,6 @@ use COIL::Validate ':val';
 
 =cut
 
-# A COIL::Tally::Pair object is an array of counts storing the bottom-left
-# off-diagonal elements of a matrix. The numbering is:
-#
-#         0   1   2   3
-#       +---+---+---+---+---+
-#     0 | X |   |   |   |...|
-# M =   +---+---+---+---+---+
-#     1 | 0 | X |   +   +...|
-#       +---+---+---+---+---+
-#     2 | 1 | 2 | X |   |...|
-#       +---+---+---+---+---+
-#     3 | 3 | 4 | 5 | X |...|
-#       +---+---+---+---+---+
-#       |...|...|...|...|...|
-#       +---+---+---+---+---+
-#
-# To map M[i][j] = CTP[k]
-#
-#     k = (i^2)/2-i/2+j
-#
 # $CTP->[$k] = [ [ $NN_ij, $Nn_ij ], [ $nN_ij, $nn_ij ] ]
 
 sub tally_numerics {
