@@ -19,6 +19,17 @@ use COIL '_fh';
 
 Compute log likelihoods for a barcode assuming independent alleles.
 
+    my $CLA = COIL::Likelihood::Allele->tally2likelihood( $CTA );
+    my $CLA_E = $CLA->add_error( $e );
+    my $likelihoods = $CLA_E->numerics_likelihoods( $numerics );
+
+=head1 DESCRIPTION
+
+Given a tally object, create a likelihood object that can be used to compute
+a likelihood at a range of COIs for a barcode. The likelihoods that are stored
+and computed are actually log likelihoods because they are not as succeptible
+to rounding errors.
+
 =cut
 
 =head1 CONSTRUCTORS
@@ -35,6 +46,8 @@ Compute log likelihoods for a barcode assuming independent alleles.
 	       padding => 0.5
 	   }
 	);
+
+Create the likelihood object.
 
 =cut
 
