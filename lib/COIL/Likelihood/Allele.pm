@@ -204,25 +204,7 @@ Generate a random numeric at a particular COI.
 sub random_numeric {
     my $self = shift;
     my ($COI) = validate_pos( @_, $VAL_POS_INT );
-    return [ map { _random_numeric($_) } @{ $self->[ $COI - 1 ] } ];
-}
-
-sub _random_numeric {
-    my ($l) = @_;
-    my $r = rand(1);
-
-    for ( my $n = 0 ; $n < 3 ; $n++ ) {
-        my $p = exp( $l->[$n] );
-        return $n if ( $r < $p );
-        $r -= $p;
-    }
-
-    croak(
-        sprintf(
-            'Random value greater than probabilities: %g %g %g',
-            $l->[0], $l->[1], $l->[2]
-        )
-    );
+    $self->[ $COI - 1 ]->random_numeric();
 }
 
 =head2 write
@@ -268,6 +250,10 @@ sub add_error {
     bless [ map { $_->add_error($ET) } @$self ], ref($self);
 }
 
+sub random_numeric {
+    [ map { $_->random_numeric } @{ $_[0] } ];
+}
+
 package COIL::Likelihood::Allele::Unit;
 
 use strict;
@@ -309,6 +295,25 @@ sub add_error {
         0
       ],
       ref($self);
+}
+
+sub random_numeric {
+    my $r = rand(1);
+
+    for ( my $n = 0 ; $n < 3 ; $n++ ) {
+        my $p = exp( $_[0][$n] );
+        return $n if ( $r < $p );
+        $r -= $p;
+    }
+
+    croak(
+        sprintf(
+            'Random value greater than probabilities: %g %g %g',
+            exp( $_[0][0] ),
+            exp( $_[0][1] ),
+            exp( $_[0][2] )
+        )
+    );
 }
 
 1;
