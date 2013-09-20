@@ -78,6 +78,7 @@ sub poisson {
 
         last if ( $CDF >= $p{CDF} );
     }
+    $self->scale();
 
     return $self;
 }
@@ -100,6 +101,24 @@ sub uniform {
 
 =cut
 
+=head2 scale
+
+=cut
+
+sub scale {
+    my $self = shift;
+
+    # first scale so max log prob is 0 to avoid rounding errors
+    my $scale = max @$self;
+    $_ -= $scale foreach (@$self);
+
+    # scale so probabilities sum to 1
+    $scale = log sum map { exp $_ } @$self;
+    $_ -= $scale foreach (@$self);
+
+    return $self;
+}
+
 =head2 posterior
 
     my $CP2 = $CP->posterior( $log_likelihood );
@@ -117,17 +136,10 @@ sub posterior {
     # P(A|B) ~ L(A|B)P(A)
     # log P(A|B) ~ log(L(A|B)) + log(P(A))
     no warnings 'once';
-    my $posterior = [ pairwise { $a + $b } @$self, @$l ];
+    my $posterior = bless [ pairwise { $a + $b } @$self, @$l ], ref($self);
+    $posterior->scale;
 
-    # first scale so max log prob is 0 to avoid rounding errors
-    my $scale = max @$posterior;
-    $_ -= $scale foreach (@$posterior);
-
-    # scale so probabilities sum to 1
-    $scale = log sum map { exp $_ } @$posterior;
-    $_ -= $scale foreach (@$posterior);
-
-    return bless $posterior, ref($self);
+    return $posterior;
 }
 
 =head2 mode
