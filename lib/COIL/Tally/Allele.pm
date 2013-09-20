@@ -28,9 +28,9 @@ representations as well as for computing likelihoods for each assay.
 
 =cut
 
-=head2 tally_barcodes
+=head2 new_from_barcodes
 
-	my $CTA = COIL::Tally::Allele->tally_barcodes($barcodes);
+	my $CTA = COIL::Tally::Allele->new_from_barcodes($barcodes);
 
 =cut
 
@@ -38,7 +38,7 @@ representations as well as for computing likelihoods for each assay.
 #
 # $CTA->[$i] = [ $A, $a, $N, $n ]
 
-sub tally_barcodes {
+sub new_from_barcodes {
     my $class = shift;
     my ($barcodes) = validate_pos( @_, $VAL_BARCODES );
 
@@ -62,20 +62,20 @@ sub tally_barcodes {
         }
     }
 
-    return bless [ map { "${class}::Unit"->new_hash($_) } @tallies ], $class;
+    return bless [ map { "${class}::Unit"->_new_from_hash($_) } @tallies ], $class;
 }
 
-=head2 random_tally
+=head2 new_rbeta
 
-    my $CTA = COIL::Tally::Allele->random_tally( $n );
-    my $CTA = COIL::Tally::Allele->random_tally( $n, $alpha, $beta );
+    my $CTA = COIL::Tally::Allele->new_rbeta( $n );
+    my $CTA = COIL::Tally::Allele->new_rbeta( $n, $alpha, $beta );
 
 Create a random tally with minor allele frequencies sampled from a Beta
 distribution.
 
 =cut
 
-sub random_tally {
+sub new_rbeta {
     my $class = shift;
     my ( $n, $a, $b ) = validate_pos(
         @_,
@@ -91,19 +91,19 @@ sub random_tally {
     return bless [
         map {
             my ( $A, $a ) = shuffle qw/ A C G T /;
-            "${class}::Unit"->new_prob( $_, $A, $a );
+            "${class}::Unit"->_new_from_p( $_, $A, $a );
         } random_beta( $n, $a, $b )
     ], $class;
 }
 
-=head2 uniform_tally
+=head2 new_rep
 
-    my $CTA = COIL::Tally::Allele->random_tally( $n, $p );
-    my $CTA = COIL::Tally::Allele->random_tally( $n, $p, $A, $a );
+    my $CTA = COIL::Tally::Allele->new_rbeta( $n, $p );
+    my $CTA = COIL::Tally::Allele->new_rbeta( $n, $p, $A, $a );
 
 =cut
 
-sub uniform_tally {
+sub new_rep {
     my $class = shift;
     my ( $n, $p, $A, $a ) = validate_pos(
         @_, $VAL_POS_INT, $VAL_PROB,
@@ -111,7 +111,7 @@ sub uniform_tally {
         { %$VAL_SALLELE, default => 'T' },
     );
 
-    return bless [ map { "${class}::Unit"->new_prob( $p, $A, $a ) } (0) x $n ],
+    return bless [ map { "${class}::Unit"->_new_from_p( $p, $A, $a ) } (0) x $n ],
       $class;
 }
 
@@ -272,7 +272,7 @@ sub new {
     bless [@_], $class;
 }
 
-sub new_hash {
+sub _new_from_hash {
     my $class = shift;
     my ($tally) = @_;
 
@@ -297,7 +297,7 @@ sub new_hash {
     bless $self, $class;
 }
 
-sub new_prob {
+sub _new_from_p {
     my $class = shift;
     my ( $p, $A, $a ) = @_;
 
