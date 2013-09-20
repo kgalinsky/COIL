@@ -20,7 +20,7 @@ COIL::Likelihood::Pair
 
 =cut
 
-=head2 tally2likelihood
+=head2 new_from_tally
 
 =cut
 
@@ -28,7 +28,7 @@ COIL::Likelihood::Pair
 #
 # $CLA->[$c][$i][$j][$gi][$gj] = log P(G_i=gi & G_j=gj|C=c+1)
 
-sub tally2likelihood {
+sub new_from_tally {
     my $class = shift;
     my ( $CTP, @p ) = validate_pos( @_, 1, { default => {} } );
     my %p = validate(
@@ -44,14 +44,14 @@ sub tally2likelihood {
 
     my $self = bless [], $class;
     my $L1 = my $L =
-      "${class}::Level"->new_Ps( [ map { $_->density($padding) } @$CTP ] );
-      push @$self, $L;
+      "${class}::Level"->_new_from_Ps( [ map { $_->P($padding) } @$CTP ] );
+    push @$self, $L;
 
-    for (my $i = 1; $i < $max_COI; $i++) {
-        $L = $L->increment($L1);
+    for ( my $i = 1 ; $i < $max_COI ; $i++ ) {
+        $L = $L->_increment($L1);
         push @$self, $L;
     }
-    
+
     return $self;
 }
 
@@ -62,16 +62,17 @@ use warnings;
 
 use List::MoreUtils 'pairwise';
 
-sub new_Ps {
+sub _new_from_Ps {
     my $class = shift;
     my ($Ps) = @_;
-    bless [ map { COIL::Likelihood::Pair::Unit->new_P($_) } @$Ps ], $class;
+    bless [ map { COIL::Likelihood::Pair::Unit->_new_from_P($_) } @$Ps ],
+      $class;
 }
 
-sub increment {
+sub _increment {
     my ( $self, $level0 ) = @_;
     no warnings 'once';
-    bless [ pairwise { $a->increment($b) } @$self, @$level0 ], ref($self);
+    bless [ pairwise { $a->_increment($b) } @$self, @$level0 ], ref($self);
 }
 
 package COIL::Likelihood::Pair::Unit;
@@ -79,7 +80,7 @@ package COIL::Likelihood::Pair::Unit;
 use strict;
 use warnings;
 
-sub new_P {
+sub _new_from_P {
     my $class = shift;
     my ($P) = @_;
 
@@ -105,7 +106,7 @@ sub new_P {
     bless $P, $class;
 }
 
-sub increment {
+sub _increment {
     my ( $self, $unit0 ) = @_;
     my $unit = bless [], ref($self);
 
