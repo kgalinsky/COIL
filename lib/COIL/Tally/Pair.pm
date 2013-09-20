@@ -91,7 +91,8 @@ sub Fisher {
                 npp => $npp
             );
         } @$self
-    ], 'COIL::Pair';
+      ],
+      'COIL::Pair';
 }
 
 package COIL::Tally::Pair::Unit;
@@ -106,5 +107,21 @@ sub new {
 
 use overload '""' => \&to_string;
 sub to_string { "[$_[0][0][0]:$_[0][0][1]/$_[0][1][0]:$_[0][1][1]]" }
+
+sub refref_count { $_[0][0][0] }
+sub refalt_count { $_[0][0][1] }
+sub altref_count { $_[0][1][0] }
+sub altalt_count { $_[0][1][1] }
+sub total_count  { $_[0][0][0] + $_[0][0][1] + $_[0][1][0] + $_[0][1][1] }
+
+sub density {
+    my $total =
+      $_[0][0][0] + $_[0][0][1] + $_[0][1][0] + $_[0][1][1] + 4 * $_[1];
+
+    return [
+        [ $_[0][0][0] / $total, $_[0][0][1] / $total ],
+        [ $_[0][1][0] / $total, $_[0][1][1] / $total ]
+    ];
+}
 
 1;
