@@ -75,6 +75,23 @@ sub _increment {
     bless [ pairwise { $a->_increment($b) } @$self, @$level0 ], ref($self);
 }
 
+sub _numeric_likelihood {
+    my ($self, $numeric) = @_;
+
+    my $l = 0;
+
+    my $k = 0;
+    for (my $i = 1; $i < @$numeric; $i++) {
+        my $ni = $numeric->[$i];
+        for (my $j = 0; $j < $i; $j++ ) {
+            my $nj = $numeric->[$j];
+            $l += $self->[$k++][$ni][$nj];
+        }
+    }
+    
+    return $l / $#$numeric;
+}
+
 package COIL::Likelihood::Pair::Unit;
 
 use strict;
