@@ -176,9 +176,9 @@ sub add_error {
     # $E->[$i][$j] = P(G*=i|G=j)
     my $e1 = 1 - $e;
     my $e2 = $e / 2;
-    my @ET = ( [ $e1, $e2, $e2 ], [ $e2, $e1, $e2 ], [ $e2, $e2, $e1 ] );
+    my @E  = ( [ $e1, $e2, $e2 ], [ $e2, $e1, $e2 ], [ $e2, $e2, $e1 ] );
 
-    return bless [ map { $_->add_error( \@ET ) } @$self ], ref($self);
+    return bless [ map { $_->add_error( \@E ) } @$self ], ref($self);
 }
 
 =head2 numeric_likelihood
@@ -275,8 +275,8 @@ sub _numeric_likelihood {
 
 # Propogate error function
 sub _add_error {
-    my ( $self, $ET ) = @_;
-    bless [ map { $_->_add_error( $_[0] ) } @$self ], ref($self);
+    my ( $self, $E ) = @_;
+    bless [ map { $_->_add_error($E) } @$self ], ref($self);
 }
 
 # Random G is collection of random G_is
@@ -315,13 +315,15 @@ sub _increment {
 
 # perform the cross product
 sub _add_error {
-    my ( $self, $ET ) = @_;
-    no warnings 'once';
+    my ( $self, $E ) = @_;
     bless [
         (
             map {
-                log sum pairwise { defined($a) ? $a * exp($b) : () } @$_, @$self
-            } @$ET
+                log(
+                    exp( $self->[0] ) * $E->[0][$_] +
+                      exp( $self->[1] ) * $E->[1][$_] +
+                      exp( $self->[2] ) * $E->[2][$_] )
+            } ( 0 .. 2 )
         ),
         0
       ],
