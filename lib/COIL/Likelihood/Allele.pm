@@ -30,6 +30,18 @@ a likelihood at a range of COIs for a barcode. The likelihoods that are stored
 and computed are actually log likelihoods because they are not as succeptible
 to rounding errors.
 
+The following equation is used for calculating the likelihood:
+
+    L(C|G) = P(G|C) = prod P(G_i|C)
+    l(C|G) = log(L(C|G)) = sum log(P(G_i|C))
+
+G_i is a random variable that has the following values:
+
+    0: Homozygous reference (let A be when G_i=0)
+    1: Homozygous alternate (let a be when G_i=1)
+    2: Heterozygous         (let N be when G_i=2)
+    3: Failed assay         (let X be when G_i=3)
+
 =cut
 
 =head1 CONSTRUCTORS
@@ -47,7 +59,31 @@ to rounding errors.
 	   }
 	);
 
-Create the likelihood object.
+Create the likelihood calculation object. This is a log of the following
+vector:
+
+        / P(A|C) \
+    L = | P(a|C) |
+        \ P(N|C) /
+
+There is a fourth element, log(P(X|C))=0 since failed assays do not tell us any
+information about COI. To compute these elements, let B be a count of ref calls
+in the different strains.
+
+    B ~ Binomial(C, p), p = allele frequency of ref
+
+    A = I(B=C)
+    a = I(B=0)
+    N = I(B>0, B<C)
+
+    P(A) = P(B=C) = p^C
+    P(a) = P(B=0) = (1-p)^C
+    P(N) = 1 - P(A) - P(a)
+
+Since we are doing everything on a log scale, the first two equations become:
+
+    log P(A) = C * log(p)
+    log P(a) = C * log(1-p)
 
 =cut
 
@@ -92,6 +128,31 @@ sub tally2likelihood {
 
     my $CLA_E = $CLA->add_error();
     my $CLA_E = $CLA->add_error( 0.05 );
+    my $CLA_E = $CLA->add_error( $E );
+
+This is computed by doing a matrix-vector multiplication. The matrix may be
+specified directly (E) or using just a simple error rate (e). Let G_i* be the
+observed allele and A*/a*/N* be the associated events from before. The matrix
+is just a stochastic matrix.
+
+    E[i][j] = P(G_i*=j|G_i=i)
+
+        / P(A*|A), P(a*|A), P(N*|A) \
+    E = | P(A*|a), P(a*|a), P(N*|a) |
+        \ P(A*|N), P(a*|N), P(N*|N) /
+
+        / 1-e, e/2, e/2 \
+      = | e/2, 1-e, e/2 |, simple error rate case
+        \ e/2, e/2, 1-e /
+
+To compute the new likelihood (L*) given the old one (L), simply multiply:
+
+    L* = LE
+
+Note that in this representation, the likelihood vectors are 1x3 rather than
+3x1. To use 3x1 vectors:
+
+    L* = E'L
 
 =cut
 
@@ -106,14 +167,11 @@ sub add_error {
     );
 
     # $E->[$i][$j] = P(G*=i|G=j)
-    my $E = [
-        [ 1 - 2 * $e, $e,         $e,         0 ],
-        [ $e,         1 - 2 * $e, $e,         0 ],
-        [ $e,         $e,         1 - 2 * $e, 0 ],
-        [ 0,          0,          0,          1 ]
-    ];
+    my $e1 = 1 - $e;
+    my $e2 = $e / 2;
+    my @ET = ( [ $e1, $e2, $e2 ], [ $e2, $e1, $e2 ], [ $e2, $e2, $e1 ] );
 
-    return bless [ map { $_->add_error($E) } @$self ], ref($self);
+    return bless [ map { $_->add_error( \@ET ) } @$self ], ref($self);
 }
 
 =head2 numerics_likelihoods
@@ -206,8 +264,8 @@ sub numeric_likelihood {
 }
 
 sub add_error {
-    my ( $self, $E ) = @_;
-    bless [ map { $_->add_error($E) } @$self ], ref($self);
+    my ( $self, $ET ) = @_;
+    bless [ map { $_->add_error($ET) } @$self ], ref($self);
 }
 
 package COIL::Likelihood::Allele::Unit;
@@ -240,12 +298,15 @@ sub ladder {
 }
 
 sub add_error {
-    my ( $self, $E ) = @_;
+    my ( $self, $ET ) = @_;
     no warnings 'once';
     bless [
-        map {
-            log( sum pairwise { $a * exp($b) } @$_, @$self )
-        } @$E
+        (
+            map {
+                log sum pairwise { defined($a) ? $a * exp($b) : () } @$_, @$self
+            } @$ET
+        ),
+        0
       ],
       ref($self);
 }
