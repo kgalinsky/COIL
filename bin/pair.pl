@@ -3,37 +3,26 @@
 use strict;
 use warnings;
 
-use COIL::Barcode;
-use COIL::Tally::Allele;
-use COIL::Likelihood::Allele;
-use COIL::Probability;
-
 use List::MoreUtils 'pairwise';
 
+use COIL::Barcode;
+use COIL::Tally::Allele;
+use COIL::Tally::Pair;
+use COIL::Likelihood::Pair;
+use COIL::Probability;
+
 my $barcodes    = COIL::Barcode::read_barcodes( $ARGV[0] );
-my $TA          = COIL::Tally::Allele->new_from_barcodes($barcodes);
-my $LA          = COIL::Likelihood::Allele->new_from_tally($TA);
-my $LAE         = $LA->add_error();
-my $numerics    = $TA->barcodes2numerics($barcodes);
-my $likelihoods = $LAE->numerics_likelihoods($numerics);
+my $CTA         = COIL::Tally::Allele->new_from_barcodes($barcodes);
+my $numerics    = $CTA->barcodes2numerics($barcodes);
+my $CTP         = COIL::Tally::Pair->new_from_numerics($numerics);
+my $CLP         = COIL::Likelihood::Pair->new_from_tally($CTP);
+my $CLP_E       = $CLP->add_error();
+my $likelihoods = $CLP_E->numerics_likelihoods($numerics);
 my $CP          = COIL::Probability->uniform(5);
 my @posteriors  = map { $CP->posterior($_) } @$likelihoods;
 my @MAPs        = map { $_->mode } @posteriors;
-
 no warnings 'once';
 my @Cs = pairwise { $a->credible_interval( 0.95, $b ) } @posteriors, @MAPs;
-
-print STDERR "Tally:\n";
-$TA->write(*STDERR);
-print STDERR "\n";
-
-print STDERR "Likelihood:\n";
-$LA->write(*STDERR);
-print STDERR "\n";
-
-print STDERR "Error Likelihood:\n";
-$LAE->write(*STDERR);
-print STDERR "\n";
 
 local $, = "\t";
 local $\ = "\n";
