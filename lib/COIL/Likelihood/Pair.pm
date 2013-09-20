@@ -3,6 +3,8 @@ package COIL::Likelihood::Pair;
 use strict;
 use warnings;
 
+use base 'COIL::Pair';
+
 use Params::Validate;
 use COIL::Validate ':val';
 
@@ -41,91 +43,95 @@ sub tally2likelihood {
     my $padding = $p{padding};
 
     my $self = bless [], $class;
-    for ( my $i = 1 ; $i < @$CTP ; $i++ ) {
-        for ( my $j = 0 ; $j < $i ; $j++ ) {
-            my @P;
-            my $t = 0;
+    my $L1 = my $L =
+      "${class}::Level"->new_Ps( [ map { $_->density($padding) } @$CTP ] );
+      push @$self, $L;
 
-            # Initialize counts + padding and total
-            foreach my $a1 ( 0, 1 ) {
-                foreach my $a2 ( 0, 1 ) {
-                    $t += $P[$a1][$a2] = $CTP->[$i][$j][$a1][$a2] + $padding;
-                }
-            }
+    for (my $i = 1; $i < $max_COI; $i++) {
+        $L = $L->increment($L1);
+        push @$self, $L;
+    }
+    
+    return $self;
+}
 
-            # Convert to probabilities
-            foreach my $a1 ( 0, 1 ) {
-                foreach my $a2 ( 0, 1 ) {
-                    $P[$a1][$a2] /= $t;
-                }
-            }
+package COIL::Likelihood::Pair::Level;
 
-            # Compute marginals
-            foreach my $a ( 0, 1 ) {
-                $P[$a][3] = $P[$a][0] + $P[$a][1];
-                $P[3][$a] = $P[0][$a] + $P[1][$a];
-            }
-            $P[3][3] = 1;
+use strict;
+use warnings;
 
-            # Take the log
-            foreach my $a1 ( 0, 1, 3 ) {
-                foreach my $a2 ( 0, 1, 3 ) {
-                    $P[$a1][$a2] = log $P[$a1][$a2];
-                }
-            }
+use List::MoreUtils 'pairwise';
 
-            # Set the poly to -inf
-            foreach my $a ( 0, 1, 3 ) {
-                $P[$a][2] = $P[2][$a] = '-inf';
-            }
+sub new_Ps {
+    my $class = shift;
+    my ($Ps) = @_;
+    bless [ map { COIL::Likelihood::Pair::Unit->new_P($_) } @$Ps ], $class;
+}
 
-            # Store
-            $self->[0][$i][$j] = \@P;
+sub increment {
+    my ( $self, $level0 ) = @_;
+    no warnings 'once';
+    bless [ pairwise { $a->increment($b) } @$self, @$level0 ], ref($self);
+}
 
-            # Copy relevant cells to Q
-            my @Q;
-            foreach my $a1 ( 0, 1, 3 ) {
-                foreach my $a2 ( 0, 1, 3 ) {
-                    $Q[$a1][$a2] = $P[$a1][$a2];
-                }
-            }
+package COIL::Likelihood::Pair::Unit;
 
-            for ( my $c = 1 ; $c < $max_COI ; $c++ ) {
+use strict;
+use warnings;
 
-                # P(Gi=0,Gj=0|C=c) = P(Gi=0,Gj=0|C=1)^c
-                foreach my $a1 ( 0, 1, 3 ) {
-                    foreach my $a2 ( 0, 1, 3 ) {
-                        $Q[$a1][$a2] += $P[$a1][$a2];
-                    }
-                }
+sub new_P {
+    my $class = shift;
+    my ($P) = @_;
 
-                # P(Gi=0,Gj=2|C=c) = P(Gi=0,Gj=3) - P(Gi=0,Gj=0) - P(Gi=0,Gj=1)
-                foreach my $a ( 0, 1, 3, 2 ) {
-                    $Q[$a][2] =
-                      log(
-                        exp( $Q[$a][3] ) -
-                          exp( $Q[$a][0] ) -
-                          exp( $Q[$a][1] ) );
-                    $Q[2][$a] =
-                      log(
-                        exp( $Q[3][$a] ) -
-                          exp( $Q[0][$a] ) -
-                          exp( $Q[1][$a] ) );
-                }
+    # marginals
+    foreach my $a ( 0, 1 ) {
+        $P->[$a][3] = $P->[$a][0] + $P->[$a][1];
+        $P->[3][$a] = $P->[0][$a] + $P->[1][$a];
+    }
+    $P->[3][3] = 1;
 
-                # Copy Q to R and store
-                my @R;
-                foreach my $a1 ( 0 .. 3 ) {
-                    foreach my $a2 ( 0 .. 3 ) {
-                        $R[$a1][$a2] = $Q[$a1][$a2];
-                    }
-                }
-                $self->[$c][$i][$j] = \@R;
-            }
+    # log
+    foreach my $a1 ( 0, 1, 3 ) {
+        foreach my $a2 ( 0, 1, 3 ) {
+            $P->[$a1][$a2] = log $P->[$a1][$a2];
         }
     }
 
-    return $self;
+    # hets
+    foreach my $a ( 0, 1, 3 ) {
+        $P->[$a][2] = $P->[2][$a] = '-inf';
+    }
+
+    bless $P, $class;
+}
+
+sub increment {
+    my ( $self, $unit0 ) = @_;
+    my $unit = bless [], ref($self);
+
+    # P(Gi=0,Gj=0|C=c) = P(Gi=0,Gj=0|C=1)^c
+    foreach my $a1 ( 0, 1, 3 ) {
+        foreach my $a2 ( 0, 1, 3 ) {
+            $unit->[$a1][$a2] =
+              $self->[$a1][$a2] + $unit0->[$a1][$a2];
+        }
+    }
+
+    # P(Gi=0,Gj=2|C=c) = P(Gi=0,Gj=3) - P(Gi=0,Gj=0) - P(Gi=0,Gj=1)
+    foreach my $a ( 0, 1, 3, 2 ) {
+        $unit->[$a][2] =
+          log(
+            exp( $unit->[$a][3] ) -
+              exp( $unit->[$a][0] ) -
+              exp( $unit->[$a][1] ) );
+        $unit->[2][$a] =
+          log(
+            exp( $unit->[3][$a] ) -
+              exp( $unit->[0][$a] ) -
+              exp( $unit->[1][$a] ) );
+    }
+
+    return $unit;
 }
 
 1;
