@@ -59,32 +59,24 @@ our %EXPORT_TAGS = (
 );
 
 # validate numbers
+sub _gen_VAL_NUM {
+    return {
+        type     => Params::Validate::SCALAR,
+        callback => {
+            'looks like a number' => sub { looks_like_number( $_[0] ) },
+            @_
+        }
+    };
+}
+
 our $VAL_POS_INT     = { regex => qr/^[1-9]\d*$/ };
 our $VAL_NON_NEG_INT = { regex => qr/^\d+$/ };
-our $VAL_PROB        = {
-    callbacks => {
-        'looks like a number' => sub { looks_like_number( $_[0] ) },
-        'in [0,1]'            => sub { ( $_[0] >= 0 ) && ( $_[0] <= 1 ) }
-    }
-};
-our $VAL_POS_REAL = {
-    callbacks => {
-        'looks like a number' => sub { looks_like_number( $_[0] ) },
-        '>0'                  => sub { ( $_[0] > 0 ) }
-    }
-};
-our $VAL_NON_NEG_REAL = {
-    callbacks => {
-        'looks like a number' => sub { looks_like_number( $_[0] ) },
-        '>=0' => sub { ( $_[0] >= 0 ) }
-    }
-};
-our $VAL_NON_POS_REAL = {
-    callbacks => {
-        'looks like a number' => sub { looks_like_number( $_[0] ) },
-        '<=0'                 => sub { ( $_[0] <= 0 ) }
-    }
-};
+our $VAL_PROB =
+  _gen_VAL_NUM( 'in [0,1]' => sub { ( $_[0] >= 0 ) && ( $_[0] <= 1 ) } );
+our $VAL_POS_REAL     = _gen_VAL_NUM( '>0'  => sub { ( $_[0] > 0 ) } );
+our $VAL_NON_NEG_REAL = _gen_VAL_NUM( '>=0' => sub { ( $_[0] >= 0 ) } );
+our $VAL_NON_POS_REAL = _gen_VAL_NUM( '<=0' => sub { ( $_[0] <= 0 ) } );
+
 our $VAL_NON_POS_REALS = {
     type      => Params::Validate::ARRAYREF,
     callbacks => { 'contains non positive reals' => \&val_non_pos_reals }
