@@ -107,8 +107,8 @@ sub uniform_tally {
     my $class = shift;
     my ( $n, $p, $A, $a ) = validate_pos(
         @_, $VAL_POS_INT, $VAL_PROB,
-        { %$VAL_NUC, default => 'A' },
-        { %$VAL_NUC, default => 'T' },
+        { %$VAL_SALLELE, default => 'A' },
+        { %$VAL_SALLELE, default => 'T' },
     );
 
     return bless [ map { "${class}::Unit"->new_prob( $p, $A, $a ) } (0) x $n ],
