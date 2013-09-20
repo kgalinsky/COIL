@@ -231,6 +231,10 @@ sub write {
 
 package COIL::Likelihood::Allele::Level;
 
+# The overall likelihood object stores the likelihoods at several COIs. Each
+# one is a further object whose main purpose is to propagate and collate calls
+# to each individual likelihood unit (below).
+
 use strict;
 use warnings;
 
@@ -239,17 +243,20 @@ use List::MoreUtils 'pairwise';
 
 sub new { bless $_[1], $_[0] }
 
+# log L(C|G) = sum log L(C|G_i) 
 sub numeric_likelihood {
     my ( $self, $numeric ) = @_;
     no warnings 'once';
     sum pairwise { $a->[$b] } @$self, @$numeric;
 }
 
+# Propogate error function
 sub add_error {
     my ( $self, $ET ) = @_;
-    bless [ map { $_->add_error($ET) } @$self ], ref($self);
+    bless [ map { $_->add_error($_[0]) } @$self ], ref($self);
 }
 
+# Random G is collection of random G_is
 sub random_numeric {
     [ map { $_->random_numeric } @{ $_[0] } ];
 }
@@ -262,6 +269,7 @@ use warnings;
 use List::Util 'sum';
 use List::MoreUtils 'pairwise';
 
+# Given p and a max COI, create units from COI=1..C
 sub ladder {
     my $class = shift;
     my ( $p, $max_COI ) = @_;
@@ -283,6 +291,7 @@ sub ladder {
     return \@selves;
 }
 
+# perform the cross product
 sub add_error {
     my ( $self, $ET ) = @_;
     no warnings 'once';
@@ -297,6 +306,7 @@ sub add_error {
       ref($self);
 }
 
+# Random G_i
 sub random_numeric {
     my $r = rand(1);
 
