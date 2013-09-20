@@ -312,5 +312,7 @@ sub major_allele { $_[0][0] }
 sub minor_allele { $_[0][1] }
 sub major_count  { $_[0][2] }
 sub minor_count  { $_[0][3] }
+sub total_count  { $_[0][2] + $_[0][3] }
+sub p { ( $_[0]->major_count + $_[1] ) / ( $_[0]->total_count + 2 * $_[1] ) }
 
 1;

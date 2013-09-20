@@ -73,29 +73,15 @@ sub tally2likelihood {
     my $max_COI = $p{max_COI};
     my $padding = $p{padding};
 
-    my $self = bless [], $class;
-    for ( my $i = 0 ; $i < @$tally ; $i++ ) {
-        my ( $p, $q ) = @{ $tally->[$i] }[ 2, 3 ];
-        $p += $padding;
-        $q += $padding;
-        my $t = $p + $q;
-        $p /= $t;
-        $q /= $t;
-
-        my $cum_log_p = my $log_p = log($p);
-        my $cum_log_q = my $log_q = log($q);
-
-        $self->[0][$i] = [ $log_p, $log_q, '-inf', 0 ];
-
-        for ( my $c = 1 ; $c < $max_COI ; $c++ ) {
-            $cum_log_p += $log_p;
-            $cum_log_q += $log_q;
-            my $log_n = log( 1 - exp($cum_log_p) - exp($cum_log_q) );
-            $self->[$c][$i] = [ $cum_log_p, $cum_log_q, $log_n, 0 ];
-        }
-    }
-
-    return ($self);
+    my @ladders =
+      map { "${class}::Unit"->ladder( $_->p($padding), $max_COI ) } @$tally;
+    return bless [
+        map {
+            my $c = $_;
+            "${class}::Level"->new( [ map { $_->[$c] } @ladders ] )
+        } ( 0 .. $max_COI - 1 )
+      ],
+      $class;
 }
 
 =head1 METHODS
@@ -127,19 +113,7 @@ sub add_error {
         [ 0,          0,          0,          1 ]
     ];
 
-    my $CLA_E = bless [], ref($self);
-    for ( my $c = 0 ; $c < @$self ; $c++ ) {
-        for ( my $i = 0 ; $i < @{ $self->[$c] } ; $i++ ) {
-            $CLA_E->[$c][$i] = [
-                map {
-                    log( sum pairwise { $a * exp($b) } @$_,
-                        @{ $self->[$c][$i] } )
-                } @$E
-            ];
-        }
-    }
-
-    return ($CLA_E);
+    return bless [ map { $_->add_error($E) } @$self ], ref($self);
 }
 
 =head2 numerics_likelihoods
@@ -154,20 +128,11 @@ sub numerics_likelihoods {
     my $self = shift;
     my ($numerics) = validate_pos( @_, $VAL_NUMERICS );
 
-    return ( [ map { $self->_numeric_likelihoods($_) } @$numerics ] );
+    return ( [ map { $self->_numeric_likelihood($_) } @$numerics ] );
 }
 
-sub _numeric_likelihoods {
-    my ( $self, $numeric ) = @_;
-
-    no warnings;
-    return (
-        [
-            map {
-                sum pairwise { $a->[$b] } @$_, @$numeric
-            } @$self
-        ]
-    );
+sub _numeric_likelihood {
+    [ map { $_->numeric_likelihood( $_[1] ) } @{ $_[0] } ];
 }
 
 =head2 random_numeric
@@ -222,6 +187,67 @@ sub write {
         }
         print $fh "\n";
     }
+}
+
+package COIL::Likelihood::Allele::Level;
+
+use strict;
+use warnings;
+
+use List::Util 'sum';
+use List::MoreUtils 'pairwise';
+
+sub new { bless $_[1], $_[0] }
+
+sub numeric_likelihood {
+    my ( $self, $numeric ) = @_;
+    no warnings 'once';
+    sum pairwise { $a->[$b] } @$self, @$numeric;
+}
+
+sub add_error {
+    my ( $self, $E ) = @_;
+    bless [ map { $_->add_error($E) } @$self ], ref($self);
+}
+
+package COIL::Likelihood::Allele::Unit;
+
+use strict;
+use warnings;
+
+use List::Util 'sum';
+use List::MoreUtils 'pairwise';
+
+sub ladder {
+    my $class = shift;
+    my ( $p, $max_COI ) = @_;
+    my $q = 1 - $p;
+
+    my $cum_log_p = my $log_p = log($p);
+    my $cum_log_q = my $log_q = log($q);
+
+    my @selves;
+    push @selves, bless [ $log_p, $log_q, '-inf', 0 ], $class;
+
+    for ( my $c = 1 ; $c < $max_COI ; $c++ ) {
+        $cum_log_p += $log_p;
+        $cum_log_q += $log_q;
+        my $log_n = log( 1 - exp($cum_log_p) - exp($cum_log_q) );
+        push @selves, bless [ $cum_log_p, $cum_log_q, $log_n, 0 ], $class;
+    }
+
+    return \@selves;
+}
+
+sub add_error {
+    my ( $self, $E ) = @_;
+    no warnings 'once';
+    bless [
+        map {
+            log( sum pairwise { $a * exp($b) } @$_, @$self )
+        } @$E
+      ],
+      ref($self);
 }
 
 1;
