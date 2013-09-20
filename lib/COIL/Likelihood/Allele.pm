@@ -111,7 +111,7 @@ sub new_from_tally {
 
     my $self = bless [], $class;
     my $L1 = my $L =
-      "${class}::Level"->_new_from_ps( [ map { $_->p($padding) } $CTA ] );
+      "${class}::Level"->_new_from_ps( [ map { $_->p($padding) } @$CTA ] );
     push @$self, $L;
 
     for ( my $i = 1 ; $i < $max_COI ; $i++ ) {
@@ -178,7 +178,7 @@ sub add_error {
     my $e2 = $e / 2;
     my @E  = ( [ $e1, $e2, $e2 ], [ $e2, $e1, $e2 ], [ $e2, $e2, $e1 ] );
 
-    return bless [ map { $_->add_error( \@E ) } @$self ], ref($self);
+    return bless [ map { $_->_add_error( \@E ) } @$self ], ref($self);
 }
 
 =head2 numeric_likelihood

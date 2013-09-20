@@ -115,7 +115,7 @@ sub altalt_count { $_[0][1][1] }
 sub total_count  { $_[0][0][0] + $_[0][0][1] + $_[0][1][0] + $_[0][1][1] }
 
 sub P {
-    my $total = $_[0]->total + 4 * $_[1];
+    my $total = $_[0]->total_count + 4 * $_[1];
 
     return [
         [ $_[0][0][0] / $total, $_[0][0][1] / $total ],
