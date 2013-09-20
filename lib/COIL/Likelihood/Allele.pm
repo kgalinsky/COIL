@@ -19,7 +19,7 @@ use COIL '_fh';
 
 Compute log likelihoods for a barcode assuming independent alleles.
 
-    my $CLA = COIL::Likelihood::Allele->tally2likelihood( $CTA );
+    my $CLA = COIL::Likelihood::Allele->new_from_tally( $CTA );
     my $CLA_E = $CLA->add_error( $e );
     my $likelihoods = $CLA_E->numerics_likelihoods( $numerics );
 
@@ -48,10 +48,10 @@ G_i is a random variable that has the following values:
 
 =cut
 
-=head2 tally2likelihood
+=head2 new_from_tally
 
-	my $CLA = COIL::Likelihood::Allele->tally2likelihood( $tally );
-	my $CLA = COIL::Likelihood::Allele->tally2likelihood(
+	my $CLA = COIL::Likelihood::Allele->new_from_tally( $tally );
+	my $CLA = COIL::Likelihood::Allele->new_from_tally(
 	   $tally,
 	   {
 	       max_COI => 5,
@@ -95,9 +95,9 @@ Since we are doing everything on a log scale, the first two equations become:
 # benefits, but the key advantage of clustering by COI is that computing the
 # genotype likelihood (log P(G|C=c)) can be done by zipping with $CLA->[$c].
 
-sub tally2likelihood {
+sub new_from_tally {
     my $class = shift;
-    my ( $tally, @p ) = validate_pos( @_, 1, { default => {} } );
+    my ( $CTA, @p ) = validate_pos( @_, 1, { default => {} } );
     my %p = validate(
         @p,
         {
@@ -109,15 +109,17 @@ sub tally2likelihood {
     my $max_COI = $p{max_COI};
     my $padding = $p{padding};
 
-    my @ladders =
-      map { "${class}::Unit"->ladder( $_->p($padding), $max_COI ) } @$tally;
-    return bless [
-        map {
-            my $c = $_;
-            "${class}::Level"->new( [ map { $_->[$c] } @ladders ] )
-        } ( 0 .. $max_COI - 1 )
-      ],
-      $class;
+    my $self = bless [], $class;
+    my $L1 = my $L =
+      "${class}::Level"->_new_from_ps( [ map { $_->p($padding) } $CTA ] );
+    push @$self, $L;
+
+    for ( my $i = 1 ; $i < $max_COI ; $i++ ) {
+        $L = $L->_increment($L1);
+        push @$self, $L;
+    }
+
+    return $self;
 }
 
 =head1 METHODS
@@ -127,13 +129,14 @@ sub tally2likelihood {
 =head2 add_error
 
     my $CLA_E = $CLA->add_error();
-    my $CLA_E = $CLA->add_error( 0.05 );
-    my $CLA_E = $CLA->add_error( $E );
+    my $CLA_E = $CLA->add_error( $e ); # default e=.05
+    my $CLA_E = $CLA->add_error( [ $e0, $e+, $e- ])
 
 This is computed by doing a matrix-vector multiplication. The matrix may be
-specified directly (E) or using just a simple error rate (e). Let G_i* be the
-observed allele and A*/a*/N* be the associated events from before. The matrix
-is just a stochastic matrix.
+specified simply by using one error rate (e) or by specifying 3 error rates.
+They correspond to a ref<->alt conversion (e0), a ref/alt->het conversion (e+),
+or a het->ref/alt conversion (e-). Let G_i* be the observed allele and A*/a*/N*
+be the associated events from before. The matrix is just a stochastic matrix.
 
     E[i][j] = P(G_i*=j|G_i=i)
 
@@ -144,6 +147,10 @@ is just a stochastic matrix.
         / 1-e, e/2, e/2 \
       = | e/2, 1-e, e/2 |, simple error rate case
         \ e/2, e/2, 1-e /
+
+        / 1-e0-e+, e0,      e+   \
+      = | e0     , 1-e0-e+, e+   |, a bit more complicated
+        \ e-/2   , e-/2,    1-e- /
 
 To compute the new likelihood (L*) given the old one (L), simply multiply:
 
@@ -174,13 +181,21 @@ sub add_error {
     return bless [ map { $_->add_error( \@ET ) } @$self ], ref($self);
 }
 
+=head2 numeric_likelihood
+
+    my $likelihood  = $CLA->numeric_likelihood( $numeric );
+
 =head2 numerics_likelihoods
 
-    my $likelihoods = $CLA->numerics_likelihoods( $numerics );
+    my $likelihoods = $CLA->numerics_likelihoods( \@numerics );
 
-Compute log likelihoods at different COIs for each numeric.
+Compute log likelihood for a numeric or an array of numerics.
 
 =cut
+
+sub numeric_likelihood {
+    shift->_numeric_likelihood( validate_pos( @_, $VAL_NUMERIC ) );
+}
 
 sub numerics_likelihoods {
     my $self = shift;
@@ -190,7 +205,7 @@ sub numerics_likelihoods {
 }
 
 sub _numeric_likelihood {
-    [ map { $_->numeric_likelihood( $_[1] ) } @{ $_[0] } ];
+    [ map { $_->_numeric_likelihood( $_[1] ) } @{ $_[0] } ];
 }
 
 =head2 random_numeric
@@ -241,19 +256,27 @@ use warnings;
 use List::Util 'sum';
 use List::MoreUtils 'pairwise';
 
-sub new { bless $_[1], $_[0] }
+sub _new_from_ps {
+    bless [ map { COIL::Likelihood::Allele::Unit->_new_from_p($_) }
+          @{ $_[1] } ], $_[0];
+}
 
-# log L(C|G) = sum log L(C|G_i) 
-sub numeric_likelihood {
+sub _increment {
+    bless [ pairwise { $a->_increment($b) } @{ $_[0] }, @{ $_[1] } ],
+      ref( $_[0] );
+}
+
+# log L(C|G) = sum log L(C|G_i)
+sub _numeric_likelihood {
     my ( $self, $numeric ) = @_;
     no warnings 'once';
     sum pairwise { $a->[$b] } @$self, @$numeric;
 }
 
 # Propogate error function
-sub add_error {
+sub _add_error {
     my ( $self, $ET ) = @_;
-    bless [ map { $_->add_error($_[0]) } @$self ], ref($self);
+    bless [ map { $_->_add_error( $_[0] ) } @$self ], ref($self);
 }
 
 # Random G is collection of random G_is
@@ -269,30 +292,29 @@ use warnings;
 use List::Util 'sum';
 use List::MoreUtils 'pairwise';
 
-# Given p and a max COI, create units from COI=1..C
-sub ladder {
-    my $class = shift;
-    my ( $p, $max_COI ) = @_;
-    my $q = 1 - $p;
+use Params::Validate;
+use COIL::Validate ':val';
 
-    my $cum_log_p = my $log_p = log($p);
-    my $cum_log_q = my $log_q = log($q);
+# create a new object from a probability
+sub new_from_p {
+    shift->_new_from_p( validate_pos( @_, $VAL_PROB ) );
+}
 
-    my @selves;
-    push @selves, bless [ $log_p, $log_q, '-inf', 0 ], $class;
+sub _new_from_p {
+    bless [ log( $_[1] ), log( 1 - $_[1] ), '-inf', 0 ], $_[0];
+}
 
-    for ( my $c = 1 ; $c < $max_COI ; $c++ ) {
-        $cum_log_p += $log_p;
-        $cum_log_q += $log_q;
-        my $log_n = log( 1 - exp($cum_log_p) - exp($cum_log_q) );
-        push @selves, bless [ $cum_log_p, $cum_log_q, $log_n, 0 ], $class;
-    }
-
-    return \@selves;
+# increment to the next COI
+sub _increment {
+    my $obj = bless [ $_[0][0] + $_[1][0], $_[0][1] + $_[1][1], undef, 0 ],
+      ref( $_[0] );
+    $obj->[2] =
+      log( 1 - exp( $obj->[0] ) - exp( $obj->[1] ) );
+    return $obj;
 }
 
 # perform the cross product
-sub add_error {
+sub _add_error {
     my ( $self, $ET ) = @_;
     no warnings 'once';
     bless [
