@@ -18,15 +18,15 @@ use COIL::Validate ':val';
 
 =cut
 
-=head2 tally_numerics
+=head2 new_from_numerics
 
-    my $CTP = COIL::Tally::Pair->tally_numerics( \@numerics );
+    my $CTP = COIL::Tally::Pair->new_from_numerics( \@numerics );
 
 =cut
 
 # $CTP->[$k] = [ [ $NN_ij, $Nn_ij ], [ $nN_ij, $nn_ij ] ]
 
-sub tally_numerics {
+sub new_from_numerics {
     my $class = shift;
     my ($numerics) = validate_pos( @_, $VAL_NUMERICS );
 
@@ -60,9 +60,9 @@ sub tally_numerics {
 
 =cut
 
-=head2 Fisher
+=head2 fisher
 
-    my $p_values = $CTP->Fisher();
+    my $p_values = $CTP->fisher();
 
 Perform Fisher's exact test on on each pair of SNPs. p-values are stored in a
 2D symmetrical matrix with undef on the diagonal.
@@ -71,7 +71,7 @@ Perform Fisher's exact test on on each pair of SNPs. p-values are stored in a
 
 use Text::NSP::Measures::2D::Fisher::twotailed;
 
-sub Fisher {
+sub fisher {
     my $self = shift;
     return bless [
         map {
@@ -114,9 +114,8 @@ sub altref_count { $_[0][1][0] }
 sub altalt_count { $_[0][1][1] }
 sub total_count  { $_[0][0][0] + $_[0][0][1] + $_[0][1][0] + $_[0][1][1] }
 
-sub density {
-    my $total =
-      $_[0][0][0] + $_[0][0][1] + $_[0][1][0] + $_[0][1][1] + 4 * $_[1];
+sub P {
+    my $total = $_[0]->total + 4 * $_[1];
 
     return [
         [ $_[0][0][0] / $total, $_[0][0][1] / $total ],
