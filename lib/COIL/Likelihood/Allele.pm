@@ -11,6 +11,8 @@ use COIL::Validate ':val';
 
 use COIL '_fh';
 
+use base 'COIL::Likelihood';
+
 =head1 NAME
 
 	COIL::Likelihood::Allele - allelic likelihoods
@@ -95,33 +97,6 @@ Since we are doing everything on a log scale, the first two equations become:
 # benefits, but the key advantage of clustering by COI is that computing the
 # genotype likelihood (log P(G|C=c)) can be done by zipping with $CLA->[$c].
 
-sub new_from_tally {
-    my $class = shift;
-    my ( $CTA, @p ) = validate_pos( @_, 1, { default => {} } );
-    my %p = validate(
-        @p,
-        {
-            max_COI => { default => 5,   %$VAL_POS_INT },
-            padding => { default => 0.5, %$VAL_NON_NEG_REAL }
-        }
-    );
-
-    my $max_COI = $p{max_COI};
-    my $padding = $p{padding};
-
-    my $self = bless [], $class;
-    my $L1 = my $L =
-      "${class}::Level"->_new_from_ps( [ map { $_->p($padding) } @$CTA ] );
-    push @$self, $L;
-
-    for ( my $i = 1 ; $i < $max_COI ; $i++ ) {
-        $L = $L->_increment($L1);
-        push @$self, $L;
-    }
-
-    return $self;
-}
-
 =head1 METHODS
 
 =cut
@@ -162,51 +137,6 @@ Note that in this representation, the likelihood vectors are 1x3 rather than
     L* = E'L
 
 =cut
-
-sub add_error {
-    my $self = shift;
-    my ($e) = validate_pos(
-        @_,
-        {
-            default => 0.05,
-            %$VAL_PROB
-        }
-    );
-
-    # $E->[$i][$j] = P(G*=i|G=j)
-    my $e1 = 1 - $e;
-    my $e2 = $e / 2;
-    my @E  = ( [ $e1, $e2, $e2 ], [ $e2, $e1, $e2 ], [ $e2, $e2, $e1 ] );
-
-    return bless [ map { $_->_add_error( \@E ) } @$self ], ref($self);
-}
-
-=head2 numeric_likelihood
-
-    my $likelihood  = $CLA->numeric_likelihood( $numeric );
-
-=head2 numerics_likelihoods
-
-    my $likelihoods = $CLA->numerics_likelihoods( \@numerics );
-
-Compute log likelihood for a numeric or an array of numerics.
-
-=cut
-
-sub numeric_likelihood {
-    shift->_numeric_likelihood( validate_pos( @_, $VAL_NUMERIC ) );
-}
-
-sub numerics_likelihoods {
-    my $self = shift;
-    my ($numerics) = validate_pos( @_, $VAL_NUMERICS );
-
-    return ( [ map { $self->_numeric_likelihood($_) } @$numerics ] );
-}
-
-sub _numeric_likelihood {
-    [ map { $_->_numeric_likelihood( $_[1] ) } @{ $_[0] } ];
-}
 
 =head2 random_numeric
 
@@ -253,6 +183,8 @@ package COIL::Likelihood::Allele::Level;
 use strict;
 use warnings;
 
+use base 'COIL::Likelihood::Level';
+
 use List::Util 'sum';
 use List::MoreUtils 'pairwise';
 
@@ -261,22 +193,11 @@ sub _new_from_ps {
           @{ $_[1] } ], $_[0];
 }
 
-sub _increment {
-    bless [ pairwise { $a->_increment($b) } @{ $_[0] }, @{ $_[1] } ],
-      ref( $_[0] );
-}
-
 # log L(C|G) = sum log L(C|G_i)
 sub _numeric_likelihood {
     my ( $self, $numeric ) = @_;
     no warnings 'once';
     sum pairwise { $a->[$b] } @$self, @$numeric;
-}
-
-# Propogate error function
-sub _add_error {
-    my ( $self, $E ) = @_;
-    bless [ map { $_->_add_error($E) } @$self ], ref($self);
 }
 
 # Random G is collection of random G_is
@@ -289,11 +210,15 @@ package COIL::Likelihood::Allele::Unit;
 use strict;
 use warnings;
 
+use base 'COIL::Likelihood::Unit';
+
 use List::Util 'sum';
 use List::MoreUtils 'pairwise';
 
 use Params::Validate;
 use COIL::Validate ':val';
+
+sub _new_from_tally { $_[0]->_new_from_p( $_[1]->p( $_[2] ) ) }
 
 # create a new object from a probability
 sub new_from_p {
