@@ -15,7 +15,7 @@ use base 'COIL::Likelihood';
 
 =head1 NAME
 
-	COIL::Likelihood::Allele - allelic likelihoods
+COIL::Likelihood::Allele - allelic likelihoods
 
 =head1 SYNOPSIS
 
@@ -89,14 +89,6 @@ Since we are doing everything on a log scale, the first two equations become:
 
 =cut
 
-# A COIL::Likelihood::Allele object has the following structure:
-#
-# $CLA->[$c][$i][$g] = log P(G_i=g|C=c+1)
-#
-# This was chosen over $CLA->[$i][$c][$g]. Grouping things by SNP first has
-# benefits, but the key advantage of clustering by COI is that computing the
-# genotype likelihood (log P(G|C=c)) can be done by zipping with $CLA->[$c].
-
 =head1 METHODS
 
 =cut
@@ -107,34 +99,12 @@ Since we are doing everything on a log scale, the first two equations become:
     my $CLA_E = $CLA->add_error( $e ); # default e=.05
     my $CLA_E = $CLA->add_error( [ $e0, $e+, $e- ])
 
-This is computed by doing a matrix-vector multiplication. The matrix may be
-specified simply by using one error rate (e) or by specifying 3 error rates.
-They correspond to a ref<->alt conversion (e0), a ref/alt->het conversion (e+),
-or a het->ref/alt conversion (e-). Let G_i* be the observed allele and A*/a*/N*
-be the associated events from before. The matrix is just a stochastic matrix.
+See COIL::Likelihood for an explanation of the error matrix. The likelihood
+with errors can be computed using matrix multiplication on the stochastic
+matrix.
 
-    E[i][j] = P(G_i*=j|G_i=i)
-
-        / P(A*|A), P(a*|A), P(N*|A) \
-    E = | P(A*|a), P(a*|a), P(N*|a) |
-        \ P(A*|N), P(a*|N), P(N*|N) /
-
-        / 1-e, e/2, e/2 \
-      = | e/2, 1-e, e/2 |, simple error rate case
-        \ e/2, e/2, 1-e /
-
-        / 1-e0-e+, e0,      e+   \
-      = | e0     , 1-e0-e+, e+   |, a bit more complicated
-        \ e-/2   , e-/2,    1-e- /
-
-To compute the new likelihood (L*) given the old one (L), simply multiply:
-
-    L* = LE
-
-Note that in this representation, the likelihood vectors are 1x3 rather than
-3x1. To use 3x1 vectors:
-
-    L* = E'L
+    L*' = L'E
+    L*  = E'L = EL
 
 =cut
 
