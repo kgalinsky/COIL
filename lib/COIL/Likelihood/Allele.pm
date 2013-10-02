@@ -245,4 +245,10 @@ sub random_numeric {
     );
 }
 
+use overload '""' => \&to_string;
+
+sub to_string {
+    join( ':', map { exp($_) } @{ $_[0] }[ 0 .. 2 ] )
+}
+
 1;
