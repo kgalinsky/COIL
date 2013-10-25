@@ -57,7 +57,7 @@ G_i is a random variable that has the following values:
 	   $tally,
 	   {
 	       max_COI => 5,
-	       padding => 0.5
+	       padding => 1
 	   }
 	);
 

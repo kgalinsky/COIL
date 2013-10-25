@@ -39,7 +39,7 @@ the log likelihood. There are 3 levels of objects in one likelihood object:
         $CTX,
         {
             max_COI => 5,
-            padding => 0.5
+            padding => 1
         }
     );
 
@@ -61,7 +61,7 @@ sub new_from_tally {
         @p,
         {
             max_COI => { default => 5,   %$VAL_POS_INT },
-            padding => { default => 0.5, %$VAL_NON_NEG_REAL }
+            padding => $VAL_PADDING
         }
     );
 
@@ -69,7 +69,7 @@ sub new_from_tally {
     my $padding = $p{padding};
 
     my $self = bless [], $class;
-    my $L1 = my $L = "${class}::Level"->_new_from_tally( $CTX, $p{padding} );
+    my $L1 = my $L = "${class}::Level"->_new_from_tally( $CTX, $padding );
     push @$self, $L;
 
     for ( my $i = 1 ; $i < $max_COI ; $i++ ) {

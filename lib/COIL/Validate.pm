@@ -17,6 +17,7 @@ our @EXPORT_VAL = qw/
   $VAL_NON_NEG_REAL
   $VAL_NON_POS_REAL
   $VAL_NON_POS_REALS
+  $VAL_PADDING
 
   $VAL_NUC
   $VAL_ALLELE
@@ -83,6 +84,8 @@ our $VAL_NON_POS_REALS = {
 };
 
 sub val_non_pos_real { looks_like_number( $_[0] ) && ( $_[0] <= 0 ) }
+
+our $VAL_PADDING = { %$VAL_NON_NEG_REAL, default => 1 };
 
 # validate strings
 our $RE_NUC     = qr/[ACGT]/;
