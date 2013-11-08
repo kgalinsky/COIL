@@ -24,13 +24,17 @@ Read barcodes from file.
 sub read_barcodes {
     my $fh = COIL::_fh( \@_ );
 
-    my @barcodes;
-    while ( local $_ = <$fh> ) {
-        chomp;
-        next if (m/^#/);
-        my ($barcode_str) = (split)[-1];
-        push @barcodes, [ split qr//, $barcode_str ];
-    }
+    # kludge to read files with just \r line endings
+
+    # read in entire file
+    local $/;
+    local $_ = <$fh>;
+
+    my @barcodes =    # read steps backwards
+      map  { [ split m// ] }    # split into array of chars
+      map  { (split)[-1] }      # grab last column
+      grep { !/^#/ }            # remove comments
+      split /[\r\n]/;           # split into lines
 
     croak "Invalid barcodes found"
       unless ( val_barcodes( \@barcodes ) );
