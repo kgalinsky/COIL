@@ -26,6 +26,7 @@ sub read_barcodes {
 
     my @barcodes;
     while ( local $_ = <$fh> ) {
+        chomp;
         next if (m/^#/);
         my ($barcode_str) = (split)[-1];
         push @barcodes, [ split qr//, $barcode_str ];
