@@ -59,9 +59,12 @@ sub poisson {
     $p{CDF}     ||= 1;
     $p{PDF}     ||= 0;
 
-    # p = f(x)/(1-f(0))
-    # log(p) = log(f(x)) - log(1-f(0))
-    #        = k*log(lambda) - lambda - log(x!) - log(1-f(0))
+    # p         = f(x)/(1-f(0))
+    # log(p)    = log(f(x)) - log(1-f(0))
+    # f(x)      = lambda^x * exp(-labmda) / x!
+    # exp(f(x)) = x*log(lambda) - lambda - log(x!)
+    # log(p)    = x*log(lambda) - lambda - log(x!) - log(1-f(0)) 
+
     my $log_p      = -1 * $lambda - log( 1 - exp( -1 * $lambda ) );
     my $CDF        = 0;
     my $log_lambda = log($lambda);
@@ -199,15 +202,15 @@ sub credible_interval {
 
     my $COIs = $CP->COIs( $n );
 
-Create a list of almost n COIs where the frequency of each COI is proportional to its
-density in the prior. Useful for simulations.
+Create a list of about n COIs where the frequency of each COI is proportional
+to its density in the prior. Useful for simulations.
 
 =cut
 
 sub COIs {
     my $self = shift;
     my ($n) = validate_pos( @_, $VAL_POS_INT );
-    return [ map { ( $_ + 1 ) x ( exp( $self->[$_] ) * $n ) }
+    return [ map { ( $_ + 1 ) x ( exp( $self->[$_] ) * $n + 0.5 ) }
           ( 0 .. $#$self ) ];
 }
 
