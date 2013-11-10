@@ -3,8 +3,6 @@ package COIL;
 use strict;
 use warnings FATAL => 'all';
 
-use Carp;
-
 =head1 NAME
 
 COIL - Compute complexity of infection from molecular barcodes
@@ -16,35 +14,6 @@ Version 0.01
 =cut
 
 our $VERSION = '0.01';
-
-use Exporter 'import';
-our @EXPORT_OK = qw/ _fh /;
-
-# helper function that opens file handle and spits out error messages
-
-sub _fh {
-    my ( $params, $mode ) = @_;
-    my $long_mode;
-
-    $mode ||= '<';
-    if    ( $mode eq '>' ) { $long_mode = 'writing' }
-    elsif ( $mode eq '<' ) { $long_mode = 'reading' }
-    else                   { croak qq{Invalid mode "$mode"} }
-
-    my $file = shift(@$params);
-    unless ($file) { return $mode eq '<' ? *STDIN : *STDOUT }    
-    
-    my $type = ref($file) || ref(\$file);
-
-    if ( $type eq 'SCALAR' ) {
-        open my $fh, ( $mode || '<' ), $file
-          or croak qq{Unable to open file "$file" for $long_mode};
-        return $fh;
-    }
-    if ( $type eq 'GLOB' ) { return $file }
-
-    croak qq{Invalid type "$type"};
-}
 
 =head1 AUTHOR
 

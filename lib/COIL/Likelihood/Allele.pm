@@ -7,9 +7,7 @@ use List::Util qw/ sum /;
 use List::MoreUtils qw/ pairwise /;
 
 use Params::Validate;
-use COIL::Validate ':val';
-
-use COIL '_fh';
+use COIL::Validate qw/ :val :grab /;
 
 use base 'COIL::Likelihood';
 
@@ -130,7 +128,7 @@ sub random_numeric {
 
 sub write {
     my $self = shift;
-    my $fh = _fh( \@_, '>' );
+    my $fh = grab_fh( \@_, '>' );
     my ($digits) = validate_pos( @_, { default => 2, %$VAL_POS_INT } );
 
     for ( my $i = 0 ; $i < @{ $self->[0] } ; $i++ ) {

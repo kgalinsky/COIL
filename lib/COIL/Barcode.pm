@@ -8,8 +8,6 @@ use Carp;
 use Params::Validate;
 use COIL::Validate ':all';
 
-use COIL '_fh';
-
 =head1 FUNCTIONS
 
 =head2 read_barcodes
@@ -22,7 +20,7 @@ Read barcodes from file.
 =cut
 
 sub read_barcodes {
-    my $fh = COIL::_fh( \@_ );
+    my $fh = grab_fh( \@_ );
 
     # kludge to read files with just \r line endings
 

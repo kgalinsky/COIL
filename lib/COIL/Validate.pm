@@ -5,10 +5,13 @@ use warnings;
 no warnings 'once';
 
 use Params::Validate;
+use Carp;
 use Scalar::Util qw/ looks_like_number /;
+use List::Util qw/ sum /;
 
 use Exporter 'import';
 
+# validations for use in Params::Validate
 our @EXPORT_VAL = qw/
   $VAL_POS_INT
   $VAL_NON_NEG_INT
@@ -51,12 +54,17 @@ our @EXPORT_FUN = qw/
   val_numerics
   /;
 
-our @EXPORT_OK = ( @EXPORT_VAL, @EXPORT_FUN );
+our @EXPORT_GRAB = qw/
+    grab_fh
+/;
+
+our @EXPORT_OK = ( @EXPORT_VAL, @EXPORT_FUN, @EXPORT_GRAB );
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
     val => \@EXPORT_VAL,
-    fun => \@EXPORT_FUN
+    fun => \@EXPORT_FUN,
+    grab => \@EXPORT_GRAB
 );
 
 # validate numbers
@@ -83,9 +91,14 @@ our $VAL_NON_POS_REALS = {
     callbacks => { 'contains non positive reals' => \&val_non_pos_reals }
 };
 
+our $VAL_DIST = { };
+
 sub val_non_pos_real { looks_like_number( $_[0] ) && ( $_[0] <= 0 ) }
 
 our $VAL_PADDING = { %$VAL_NON_NEG_REAL, default => 1 };
+
+sub val_sum_1        { sum( @{ $_[0] } ) == 1 }
+sub val_exp_sum_1    { sum( map { exp } @{ $_[0] } ) == 1 }
 
 # validate strings
 our $RE_NUC     = qr/[ACGT]/;
@@ -201,5 +214,35 @@ sub _gen_val_mult {
 *_val_barcodes     = _gen_val_mult( \&val_barcode );
 *_val_strains      = _gen_val_mult( \&val_strain );
 *_val_numerics     = _gen_val_mult( \&val_numeric );
+
+# GRAB FUNCTIONS
+
+
+# helper function that opens file handle and spits out error messages
+
+sub grab_fh {
+    my ( $params, $mode ) = @_;
+    my $long_mode;
+
+    $mode ||= '<';
+    if    ( $mode eq '>' ) { $long_mode = 'writing' }
+    elsif ( $mode eq '<' ) { $long_mode = 'reading' }
+    else                   { croak qq{Invalid mode "$mode"} }
+
+    my $file = shift(@$params);
+    unless ($file) { return $mode eq '<' ? *STDIN : *STDOUT }    
+    
+    my $type = ref($file) || ref(\$file);
+
+    if ( $type eq 'SCALAR' ) {
+        open my $fh, ( $mode || '<' ), $file
+          or croak qq{Unable to open file "$file" for $long_mode};
+        return $fh;
+    }
+    if ( $type eq 'GLOB' ) { return $file }
+
+    croak qq{Invalid type "$type"};
+}
+
 
 1;

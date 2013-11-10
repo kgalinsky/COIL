@@ -3,7 +3,7 @@ package COIL::Pair;
 use strict;
 use warnings;
 
-use COIL '_fh';
+use COIL::Validate ':grab';
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ a "simpler" data structure.
 A COIL::Pair object is an array of counts stores the bottom-left off-diagonal
 elements of a 2D matrix. The numbering is:
 
-         0   1   2   3
+        0   1   2   3
       +---+---+---+---+---+
     0 | X |   |   |   |...|
       +---+---+---+---+---+
@@ -54,7 +54,7 @@ To map M[i][j] = P[k]:
 
 sub write {
     my $self = shift;
-    my $fh = _fh( \@_, '>' );
+    my $fh = grab_fh( \@_, '>' );
 
     local $, = "\t";
     local $\ = "\n";

@@ -9,9 +9,7 @@ use List::MoreUtils qw/ pairwise /;
 use Math::Random qw/ random_beta /;
 
 use Params::Validate;
-use COIL::Validate ':val';
-
-use COIL '_fh';
+use COIL::Validate qw/ :val :grab /;
 
 =head1 NAME
 
@@ -202,7 +200,7 @@ sub random_strain {
 
 sub read {
     my $class = shift;
-    my $fh = _fh( @_, '<' );
+    my $fh = grab_fh( @_, '<' );
 
     my $self = bless [], $class;
 
@@ -228,7 +226,7 @@ A direct output of the tally object.
 
 sub write {
     my $self = shift;
-    my $fh = _fh( \@_, '>' );
+    my $fh = grab_fh( \@_, '>' );
 
     local $, = "\t";
     local $\ = "\n";
@@ -251,7 +249,7 @@ be the major allele frequency.
 
 sub write_density {
     my $self = shift;
-    my $fh = _fh( \@_, '>' );
+    my $fh = grab_fh( \@_, '>' );
 
     local $, = "\t";
     local $\ = "\n";
@@ -279,7 +277,7 @@ sub _new_from_hash {
     my @alleles = keys %$tally;
 
     if ( @alleles == 1 ) {
-        carp qq{Not biallelic};
+        carp qq{Monoallelic};
         $alleles[1] = '?';
     }
 
