@@ -249,4 +249,14 @@ sub write {
     print exp($_) foreach (@$self);
 }
 
+=head2 to_string
+
+=cut
+
+use overload '""' => \&to_string;
+
+sub to_string {
+    join "\t", map { sprintf '%.02g', exp($_) } @{ $_[0] };
+}
+
 1;
