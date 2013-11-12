@@ -246,7 +246,7 @@ sub write {
     local $\ = "\n";
     local $, = "\t";
 
-    print $_, exp($_) foreach (@$self);
+    print exp($_) foreach (@$self);
 }
 
 1;
