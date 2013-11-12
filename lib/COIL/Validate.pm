@@ -12,6 +12,21 @@ use List::Util qw/ sum /;
 # (1) INITIALIZE EXPORTING
 use Exporter 'import';
 
+# regular expressions
+our @EXPORT_RE = qw/
+  $RE_NUC
+  $RE_SALLELE
+  $RE_STRAIN
+  
+  $RE_UNIT
+  $RE_ALLELE
+  $RE_BARCODE
+  
+  $RE_NUM
+  $RE_NALLELE
+  $RE_NUMERIC
+/;
+
 # validations for use in Params::Validate
 our @EXPORT_VAL = qw/
   $VAL_POS_INT
@@ -69,10 +84,11 @@ our @EXPORT_GRAB = qw/
   grab_fh
   /;
 
-our @EXPORT_OK = ( @EXPORT_VAL, @EXPORT_FUN, @EXPORT_GRAB );
+our @EXPORT_OK = ( @EXPORT_RE, @EXPORT_VAL, @EXPORT_FUN, @EXPORT_GRAB );
 
 our %EXPORT_TAGS = (
     all  => \@EXPORT_OK,
+    re   => \@EXPORT_RE,
     val  => \@EXPORT_VAL,
     fun  => \@EXPORT_FUN,
     grab => \@EXPORT_GRAB
