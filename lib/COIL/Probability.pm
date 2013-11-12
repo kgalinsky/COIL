@@ -9,7 +9,7 @@ use List::Util qw/ max min reduce sum /;
 use List::MoreUtils qw/ pairwise /;
 
 use Params::Validate;
-use COIL::Validate ':val';
+use COIL::Validate qw/ :val :grab /;
 
 =head1 NAME
 
@@ -54,7 +54,7 @@ sub poisson {
         }
     );
 
-    $p{max_COI} = 5 unless ( $p{max} || $p{CDF} || $p{PDF} );
+    $p{max_COI} = 5 unless ( $p{max_COI} || $p{CDF} || $p{PDF} );
     $p{max_COI} ||= 100;
     $p{CDF}     ||= 1;
     $p{PDF}     ||= 0;
@@ -62,8 +62,8 @@ sub poisson {
     # p         = f(x)/(1-f(0))
     # log(p)    = log(f(x)) - log(1-f(0))
     # f(x)      = lambda^x * exp(-labmda) / x!
-    # exp(f(x)) = x*log(lambda) - lambda - log(x!)
-    # log(p)    = x*log(lambda) - lambda - log(x!) - log(1-f(0)) 
+    # log(f(x)) = x*log(lambda) - lambda - log(x!)
+    # log(p)    = x*log(lambda) - lambda - log(x!) - log(1-f(0))
 
     my $log_p      = -1 * $lambda - log( 1 - exp( -1 * $lambda ) );
     my $CDF        = 0;
@@ -212,6 +212,41 @@ sub COIs {
     my ($n) = validate_pos( @_, $VAL_POS_INT );
     return [ map { ( $_ + 1 ) x ( exp( $self->[$_] ) * $n + 0.5 ) }
           ( 0 .. $#$self ) ];
+}
+
+=head2 combine
+
+    my $CP = COIL::Probability::combine(\@CPs);
+
+Combine multiple distributions into one.
+
+=cut
+
+sub combine {
+    my $class = shift;
+    my ($CPs) = validate_pos( @_, $VAL_LOG_DISTS );
+
+    bless [
+        map {
+            my $i = $_;
+            log( sum( map { exp( $_->[$i] ) } @$CPs ) / @$CPs );
+        } ( 0 .. $#{ $CPs->[0] } )
+      ],
+      $class;
+}
+
+=head2 write
+
+=cut
+
+sub write {
+    my $self = shift;
+    my $fh   = grab_fh(@_);
+
+    local $\ = "\n";
+    local $, = "\t";
+
+    print $_, exp($_) foreach (@$self);
 }
 
 1;
