@@ -7,9 +7,10 @@ use Carp;
 use List::Util qw/ shuffle sum /;
 use List::MoreUtils qw/ pairwise /;
 use Math::Random qw/ random_beta /;
+use Scalar::Util qw/ looks_like_number /;
 
 use Params::Validate;
-use COIL::Validate qw/ :val :grab /;
+use COIL::Validate qw/ :re :val :grab /;
 
 =head1 NAME
 
@@ -60,7 +61,8 @@ sub new_from_barcodes {
         }
     }
 
-    return bless [ map { "${class}::Unit"->_new_from_hash($_) } @tallies ], $class;
+    return bless [ map { "${class}::Unit"->_new_from_hash($_) } @tallies ],
+      $class;
 }
 
 =head2 new_rbeta
@@ -109,7 +111,8 @@ sub new_rep {
         { %$VAL_SALLELE, default => 'T' },
     );
 
-    return bless [ map { "${class}::Unit"->_new_from_p( $p, $A, $a ) } (0) x $n ],
+    return
+      bless [ map { "${class}::Unit"->_new_from_p( $p, $A, $a ) } (0) x $n ],
       $class;
 }
 
@@ -202,14 +205,15 @@ sub read {
     my $class = shift;
     my $fh = grab_fh( @_, '<' );
 
-    my $self = bless [], $class;
+    # read in entire file
+    local $/;
+    local $_ = <$fh>;
 
-    local $/ = "\n";
-    while ( local $_ = <$fh> ) {
-        push @$self, [split];    # TODO validate tally lines
-    }
-
-    return $self;
+    bless [
+        map    { "${class}::Unit"->new(split) }    # make units
+          grep { !m/^#/ }                          # remove comments
+          split /[\r\n]/                           # split into lines
+    ], $class;
 }
 
 =head2 write
@@ -265,9 +269,24 @@ use warnings;
 
 use Carp;
 
+use Params::Validate;
+use COIL::Validate qw/ :val /;
+
 sub new {
     my $class = shift;
-    bless [@_], $class;
+
+    my ( $A, $a, $MAF, $maf ) =
+      validate_pos( @_, $VAL_SALLELE, $VAL_ALLELE, $VAL_POS_REAL,
+        { default => -1, %$VAL_POS_REAL } );
+
+    if ( $maf == -1 ) {
+        croak
+          qq{Minor allele frequency undefined and major allele frequency > 1}
+          if ( $MAF > 1 );
+        $maf = 1 - $MAF;
+    }
+
+    bless [ $A, $a, $MAF, $maf ], $class;
 }
 
 sub _new_from_hash {
@@ -278,7 +297,7 @@ sub _new_from_hash {
 
     if ( @alleles == 1 ) {
         carp qq{Monoallelic};
-        $alleles[1] = '?';
+        $alleles[1] = 'X';
     }
 
     elsif ( @alleles == 0 ) { croak qq{No alleles} }
