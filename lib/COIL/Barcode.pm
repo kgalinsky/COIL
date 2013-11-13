@@ -59,6 +59,25 @@ sub read {
     $plural->new( [ map { $class->new_str( (split)[-1] ) } @$lines ] );
 }
 
+=head1 METHODS
+
+=cut
+
+=head2 to_string
+
+    print $barcode->to_string();
+    print $barcode;
+
+    print $numeric->to_string();
+    print $numeric;
+
+Convert a barcode or numeric to a string.
+
+=cut
+
+use overload '""' => \&to_string;
+sub to_string { join '', @{$_[0]} }
+
 =head2 add_assay_failures
 
     my $barcode2 = $barcode->add_assay_failures( $failure_rate );
