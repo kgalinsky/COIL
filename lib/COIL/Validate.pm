@@ -178,7 +178,7 @@ sub approx {
 }
 
 # (3) VALIDATIONS FOR NUMBERS
-our $VAL_NUM          = _gen_val_NUM();
+our $VAL_NUM          = _gen_VAL_NUM();
 our $VAL_POS_INT      = { regex => qr/^[1-9]\d*$/ };
 our $VAL_NON_NEG_INT  = { regex => qr/^\d+$/ };
 our $VAL_POS_REAL     = _gen_VAL_NUM( '>0' => sub { ( $_[0] > 0 ) } );
