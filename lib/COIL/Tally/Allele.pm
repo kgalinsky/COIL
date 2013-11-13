@@ -203,17 +203,9 @@ sub random_strain {
 
 sub read {
     my $class = shift;
-    my $fh = grab_fh( @_, '<' );
-
-    # read in entire file
-    local $/;
-    local $_ = <$fh>;
-
-    bless [
-        map    { "${class}::Unit"->new(split) }    # make units
-          grep { !m/^#/ }                          # remove comments
-          split /[\r\n]/                           # split into lines
-    ], $class;
+    my $lines = grab_lines( \@_ );
+    bless [ map { "${class}::Unit"->new(split) } @$lines ],
+      $class;
 }
 
 =head2 write

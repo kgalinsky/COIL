@@ -20,19 +20,11 @@ Read barcodes from file.
 =cut
 
 sub read_barcodes {
-    my $fh = grab_fh( \@_ );
-
-    # kludge to read files with just \r line endings
-
-    # read in entire file
-    local $/;
-    local $_ = <$fh>;
-
-    my @barcodes =    # read steps backwards
+    my $lines = grab_lines( \@_ );
+    my @barcodes = 
       map  { [ split m// ] }    # split into array of chars
       map  { (split)[-1] }      # grab last column
-      grep { !/^#/ }            # remove comments
-      split /[\r\n]/;           # split into lines
+      @$lines;
 
     croak "Invalid barcodes found"
       unless ( val_barcodes( \@barcodes ) );

@@ -84,6 +84,7 @@ our @EXPORT_FUN = qw/
 # these grab something from @_ before validation
 our @EXPORT_GRAB = qw/
   grab_fh
+  grab_lines
   /;
 
 our @EXPORT_OK = ( @EXPORT_RE, @EXPORT_VAL, @EXPORT_FUN, @EXPORT_GRAB );
@@ -313,6 +314,19 @@ sub grab_fh {
     if ( $type eq 'GLOB' ) { return $file }
 
     croak qq{Invalid type "$type"};
+}
+
+sub grab_lines {
+    my $fh = grab_fh(@_);
+
+    local $/ = "\n";
+    local $_ = <$fh>;
+
+    return [
+        grep   { !m/^#/ }    # grab non-comment lines
+          grep { $_ }        # grab non-empty lines
+          split /[\r\n]/     # split by return and newline
+    ];
 }
 
 1;
