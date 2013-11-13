@@ -25,6 +25,41 @@ Create and manipulate COI probabilities.
 
 =cut
 
+=head2 new
+
+    my $CP = COIL::Probability->new( \@densities );
+    my $CP = COIL::Probability->new( [ $P_COI1, $P_COI2, ... ] );
+    my $CP = COIL::Probability->new( \@frequencies );
+    my $CP = COIL::Probability->new( \@log_densities )
+
+Create a probability distribution. The passed distribution must contain either
+all non-negative or all non-positive numbers. If all the numbers are non-
+negative, it is assumed to be either a list of densities or a list of
+frequencies. If they are all non-positive, then it is assumed that they are
+log densities. The values are then stored and the distribution is scaled so
+that the densities sum to one. Note, if all 0s are passed, it is assumed that
+this is a log density of a uniform distribution.
+
+=cut
+
+sub new {
+    my $class = shift;
+    my ($nums) = validate_pos( @_, $VAL_NUMS );
+
+    my $pos = grep { $_ > 0 } @$nums;
+    my $neg = grep { $_ < 0 } @$nums;
+
+    croak 'Positive and negative numbers found in the density'
+      if ( $pos && $neg );
+
+    $pos ? $class->_new_pos($nums) : $class->new_neg($nums);
+}
+
+#<<<
+sub _new_pos { ( bless [ map { log $_ } @{ $_[1] } ], $_[0] )->scale }
+sub _new_neg { ( bless                         $_[1], $_[0] )->scale }
+#>>>
+
 =head2 poisson
 
     my $CP = COIL::Probability->poisson( $lambda );
