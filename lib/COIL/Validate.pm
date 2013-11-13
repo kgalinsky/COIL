@@ -17,18 +17,19 @@ our @EXPORT_RE = qw/
   $RE_NUC
   $RE_SALLELE
   $RE_STRAIN
-  
+
   $RE_UNIT
   $RE_ALLELE
   $RE_BARCODE
-  
+
   $RE_NUM
   $RE_NALLELE
   $RE_NUMERIC
-/;
+  /;
 
 # validations for use in Params::Validate
 our @EXPORT_VAL = qw/
+  $VAL_NUM
   $VAL_POS_INT
   $VAL_NON_NEG_INT
   $VAL_POS_REAL
@@ -37,6 +38,7 @@ our @EXPORT_VAL = qw/
   $VAL_PROB
   $VAL_PADDING
 
+  $VAL_NUMS
   $VAL_PROBS
   $VAL_NON_POS_REALS
   $VAL_DIST
@@ -176,9 +178,10 @@ sub approx {
 }
 
 # (3) VALIDATIONS FOR NUMBERS
-our $VAL_POS_INT     = { regex => qr/^[1-9]\d*$/ };
-our $VAL_NON_NEG_INT = { regex => qr/^\d+$/ };
-our $VAL_POS_REAL     = _gen_VAL_NUM( '>0'  => sub { ( $_[0] > 0 ) } );
+our $VAL_NUM          = _gen_val_NUM();
+our $VAL_POS_INT      = { regex => qr/^[1-9]\d*$/ };
+our $VAL_NON_NEG_INT  = { regex => qr/^\d+$/ };
+our $VAL_POS_REAL     = _gen_VAL_NUM( '>0' => sub { ( $_[0] > 0 ) } );
 our $VAL_NON_NEG_REAL = _gen_VAL_NUM( '>=0' => sub { ( $_[0] >= 0 ) } );
 our $VAL_NON_POS_REAL = _gen_VAL_NUM( '<=0' => sub { ( $_[0] <= 0 ) } );
 our $VAL_PROB         = _gen_VAL_NUM(
@@ -187,6 +190,10 @@ our $VAL_PROB         = _gen_VAL_NUM(
 );
 
 our $VAL_PADDING = { %$VAL_NON_NEG_REAL, default => 1 };
+
+*_val_nums = _gen_val_mult( \&looks_like_number );
+*val_nums  = _gen_val_arrayref( \&_val_nums );
+our $VAL_NUMS = _gen_VAL_ARRAYREF( \&_val_nums );
 
 sub val_prob { looks_like_number( $_[0] ) && ( $_[0] >= 0 ) && ( $_[0] <= 1 ) }
 sub val_non_pos_real { looks_like_number( $_[0] ) && ( $_[0] <= 0 ) }
