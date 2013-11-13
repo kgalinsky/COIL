@@ -319,7 +319,7 @@ sub grab_fh {
 sub grab_lines {
     my $fh = grab_fh(@_);
 
-    local $/ = "\n";
+    local $/;
     local $_ = <$fh>;
 
     return [
