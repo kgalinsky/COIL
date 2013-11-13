@@ -8,6 +8,32 @@ use Carp;
 use Params::Validate;
 use COIL::Validate ':all';
 
+=head1 CONSTRUCTORS
+
+=cut
+
+=head2 new
+
+    my $barcode = COIL::Barcode->new( \@barcode );
+
+=head2 new_str
+
+    my $barcode = COIL::Barcode->new_str( $barcode_string );
+
+=cut
+
+sub new {
+    my $class = shift;
+    my ($barcode) = validate_pos(@_, $VAL_BARCODE);
+    bless $barcode, $class;
+}
+
+sub new_str {
+    my $class = shift;
+    my ($barcode_str)= validate_pos(@_, $VAL_BARCODE_STR);
+    bless [ split m//, $barcode_str], $class;
+}
+
 =head1 FUNCTIONS
 
 =head2 read_barcodes
@@ -63,5 +89,14 @@ sub add_assay_failures_numeric {
         } @$numerics
     ];
 }
+
+package COIL::Barcodes;
+
+use strict;
+use warnings;
+
+package COIL::Numeric;
+
+
 
 1;
