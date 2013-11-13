@@ -311,7 +311,7 @@ sub grab_fh {
           or croak qq{Unable to open file "$file" for $long_mode};
         return $fh;
     }
-    if ( $type eq 'GLOB' ) { return $file }
+    if ( $type eq 'GLOB' or $type eq 'Fh' ) { return $file }
 
     croak qq{Invalid type "$type"};
 }
