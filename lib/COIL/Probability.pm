@@ -17,7 +17,18 @@ COIL::Probability - COI probability distributions
 
 =head1 SYNOPSIS
 
-Create and manipulate COI probabilities.
+    my $CP_prior     = COIL::Probability->poisson( $lambda );
+    my $CP_posterior = $CP_prior->posterior( \@log_likelihood );
+    my $MAP          = $CP_posterior->mode();     
+    my $credible     = $CP_posterior->credible(); # credible interval
+
+=head1 DESCRIPTION
+
+This module represents a discrete distribution ranging over the positive
+integers. Under the hood, this is stored as an array of log probabilities.
+Entries outside the defined probabilities have a probability of 0. There are
+several constructors that allow you to create an entirely custom nonparametric
+distribution or you can use a few common predefined discrete distributions.
 
 =cut
 
@@ -155,6 +166,12 @@ sub read {
 
 =head2 scale
 
+    $CP->scale();
+
+Rescale the distribution so that the probabilities sum to 1. This shouldn't be
+necessary for the end user, but I've included it as a public method just in
+case.
+
 =cut
 
 sub scale {
@@ -173,7 +190,17 @@ sub scale {
 
 =head2 posterior
 
-    my $CP2 = $CP->posterior( $log_likelihood );
+    my $CP2 = $CP1->posterior( \@log_likelihood );
+
+Construct a posterior distribution using a prior and calculated log likelihood.
+This is calculated using following formula:
+
+        CP2  = L * CP1 / c
+    log(CP2) = l + log(CP1) - log(c)
+
+This formulation is very convenient because the probability is stored as a log
+probability, so you can just compute the posterior by zipping the prior and the
+likelihood, summing the corresponding entries, and then rescaling.
 
 =cut
 
@@ -207,17 +234,21 @@ sub mode {
     ( reduce { $self->[$a] < $self->[$b] ? $b : $a } ( 0 .. $#$self ) ) + 1;
 }
 
-=head2 credible_interval
+=head2 credible
 
-    my $COI_credible_interval = $CP->credible_interval();
-    my $COI_credible_interval = $CP->credible_interval( 0.95 );
-    my $COI_credible_interval = $CP->credible_interval( 0.95, $mode );
+    my $COI_credible = $CP->credible();
+    my $COI_credible = $CP->credible( 0.95 );
+    my $COI_credible = $CP->credible( 0.95, $mode );
 
-Return credible interval.
+Return credible interval. This is returned as an arraref containing the lower
+and upper bounds and the coverage. Since there is an artificial upper bound on
+the distribution due to the implementation, if the upper bound of the credible
+interval abuts the end of the distribution, a "+" is appended to indicate that
+this upper bound actually means that value or greater. 
 
 =cut
 
-sub credible_interval {
+sub credible {
     my $self = shift;
     my ( $threshold, $mode ) = validate_pos(
         @_,
@@ -256,7 +287,8 @@ sub credible_interval {
     my $COIs = $CP->COIs( $n );
 
 Create a list of about n COIs where the frequency of each COI is proportional
-to its density in the prior. Useful for simulations.
+to its density in the prior. Useful for simulations. It's about n due to
+rounding.
 
 =cut
 
@@ -269,9 +301,9 @@ sub COIs {
 
 =head2 combine
 
-    my $CP = COIL::Probability::combine(\@CPs);
+    my $CP = COIL::Probability::combine( \@CPs );
 
-Combine multiple distributions into one.
+Average multiple distributions.
 
 =cut
 
@@ -290,6 +322,11 @@ sub combine {
 
 =head2 write
 
+    $CP->write();
+    $CP->write( $filename_or_filehandle );
+
+Write the density with each probability on its own line.
+
 =cut
 
 sub write {
@@ -304,11 +341,16 @@ sub write {
 
 =head2 to_string
 
+    print $CP->to_string;
+    print $CP;
+
+Write the density with each probability tab-delimited.
+
 =cut
 
 use overload '""' => \&to_string;
 
-sub to_string {
+sub to_string { 
     join "\t", map { sprintf '%.02g', exp($_) } @{ $_[0] };
 }
 
