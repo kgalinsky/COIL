@@ -135,6 +135,20 @@ sub uniform {
     return bless [ ( log( 1 / $max_COI ) ) x $max_COI ], $class;
 }
 
+=head2 read
+
+    my $CP = COIL::Probability->read( $file );
+
+Read a probability distribution from a file.
+
+=cut
+
+sub read {
+    my $class = shift;
+    my $lines = grab_lines( \@_ );
+    $class->new( [ map { (split)[0] } @$lines ] );
+}
+
 =head1 METHODS
 
 =cut
@@ -232,7 +246,7 @@ sub credible_interval {
 
     $lower++;
     $upper++;
-    $upper .= '+' if ($upper == @$self);
+    $upper .= '+' if ( $upper == @$self );
 
     [ $lower, $upper, $conf ];
 }
