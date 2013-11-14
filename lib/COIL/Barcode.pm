@@ -120,8 +120,13 @@ use COIL::Validate qw/ :val :grab /;
 sub new {
     my $class = shift;
     ( my $singular = $class ) =~ s/s$//;
-    my ($self) = validate_pos( @_, { type => Params::Validate::ARRAYREF } );
-    validate_pos( @$self, ( { isa => $singular } ) x @$self );
+    my ($self) =
+      validate_pos( @_, { type => Params::Validate::ARRAYREF } );
+
+    foreach my $el (@$self) {
+        $el = $singular->new($el) unless ( ref($el) eq $singular );
+    }
+
     bless $self, $class;
 }
 
@@ -201,7 +206,7 @@ sub _to_barcode_struct {
     [ map { [ $_->[0], $_->[1], 'N', 'X' ] } @{ $_[0] } ];
 }
 
-package COIL::Barcode;                                           # barcode class
+package COIL::Barcode;    # barcode class
 
 use strict;
 use warnings;
