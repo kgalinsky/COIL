@@ -194,7 +194,7 @@ our $VAL_PADDING = { %$VAL_NON_NEG_REAL, default => 1 };
 
 *_val_nums = _gen_val_mult( \&looks_like_number );
 *val_nums  = _gen_val_arrayref( \&_val_nums );
-our $VAL_NUMS = _gen_VAL_ARRAYREF( \&_val_nums );
+our $VAL_NUMS = _gen_VAL_ARRAYREF( 'numbers', \&_val_nums );
 
 sub val_prob { looks_like_number( $_[0] ) && ( $_[0] >= 0 ) && ( $_[0] <= 1 ) }
 sub val_non_pos_real { looks_like_number( $_[0] ) && ( $_[0] <= 0 ) }
