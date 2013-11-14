@@ -230,7 +230,11 @@ sub credible_interval {
         }
     }
 
-    [ $lower + 1, $upper + 1, $conf ];
+    $lower++;
+    $upper++;
+    $upper .= '+' if ($upper == @$self);
+
+    [ $lower, $upper, $conf ];
 }
 
 =head2 COIs
