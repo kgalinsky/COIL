@@ -6,21 +6,31 @@ use Test::More;
 
 plan tests => 10;
 
+sub use_or_fail {
+    use_ok( $_[0] ) || print "$_[0] failed\n";
+}
+
 BEGIN {
-    use_ok('COIL')           || print "COIL failed\n";
-    use_ok('COIL::Validate') || print "COIL::Validate failed\n";
-    use_ok('COIL::Barcode')  || print "COIL::Barcode failed\n";
-    use_ok('COIL::Likelihood')
-      || print "COIL::Likelihood failed\n";
-    use_ok('COIL::Pair')        || print "COIL::Pair failed\n";
-    use_ok('COIL::Probability') || print "COIL::Probability failed\n";
+    foreach my $p (
+        qw/
+        COIL
 
-    use_ok('COIL::Tally::Allele') || print "COIL::Tally::Allele failed\n";
-    use_ok('COIL::Likelihood::Allele')
-      || print "COIL::Likelihood::Allele failed\n";
+        COIL::Validate
+        COIL::Barcode
+        COIL::Calculator
+        COIL::Pair
+        COIL::Probability
 
-    use_ok('COIL::Tally::Pair')      || print "COIL::Tally::Pair failed\n";
-    use_ok('COIL::Likelihood::Pair') || print "COIL::Likelihood::Pair failed\n";
+        COIL::Tally::Allele
+        COIL::Calculator::Allele
+
+        COIL::Tally::Pair
+        COIL::Calculator::Pair
+        /
+      )
+    {
+        use_or_fail($p);
+    }
 }
 
 diag("Testing COIL $COIL::VERSION, Perl $], $^X");
