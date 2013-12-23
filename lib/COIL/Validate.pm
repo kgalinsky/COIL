@@ -323,9 +323,9 @@ sub grab_lines {
     local $_ = <$fh>;
 
     return [
-        grep  { $_ }            # grab non-empty lines
-          map { s/\s*#.*// }    # remove comments
-          split /[\r\n]/        # split by return and newline
+        grep  { $_ }                # grab non-empty lines
+          map { s/\s*#.*//; $_ }    # remove comments
+          split /[\r\n]/            # split by return and newline
     ];
 }
 
