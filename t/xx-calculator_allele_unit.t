@@ -8,9 +8,9 @@ use Test::Deep;
 
 plan tests => 4;
 
-use COIL::Likelihood::Allele;
+use COIL::Calculator::Allele;
 
-my $class = 'COIL::Likelihood::Allele::Unit';
+my $class = 'COIL::Calculator::Allele::Unit';
 my $u1    = $class->_new_from_p(.2);
 
 cmp_deeply(

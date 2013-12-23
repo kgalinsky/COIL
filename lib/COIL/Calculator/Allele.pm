@@ -1,4 +1,4 @@
-package COIL::Likelihood::Allele;
+package COIL::Calculator::Allele;
 
 use strict;
 use warnings;
@@ -9,19 +9,19 @@ use List::MoreUtils qw/ pairwise /;
 use Params::Validate;
 use COIL::Validate qw/ :val :grab /;
 
-use base 'COIL::Likelihood';
+use parent 'COIL::Calculator';
 
 =head1 NAME
 
-COIL::Likelihood::Allele - allelic likelihoods
+COIL::Calculator::Allele - allelic likelihoods
 
 =head1 SYNOPSIS
 
 Compute log likelihoods for a barcode assuming independent alleles.
 
-    my $CLA = COIL::Likelihood::Allele->new_from_tally( $CTA );
-    my $CLA_E = $CLA->add_error( $e );
-    my $likelihoods = $CLA_E->numerics_likelihoods( $numerics );
+    my $calc = COIL::Calculator::Allele->new_from_tally( $CTA );
+    my $calc_err = $calc->add_error( $e );
+    my $likelihoods = $calc_err->numerics_likelihoods( $numerics );
 
 =head1 DESCRIPTION
 
@@ -50,8 +50,8 @@ G_i is a random variable that has the following values:
 
 =head2 new_from_tally
 
-	my $CLA = COIL::Likelihood::Allele->new_from_tally( $tally );
-	my $CLA = COIL::Likelihood::Allele->new_from_tally(
+	my $calc = COIL::Calculator::Allele->new_from_tally( $tally );
+	my $calc = COIL::Calculator::Allele->new_from_tally(
 	   $tally,
 	   {
 	       max_COI => 5,
@@ -59,25 +59,27 @@ G_i is a random variable that has the following values:
 	   }
 	);
 
-Create the likelihood calculation object. This is a log of the following
-vector:
+Create the likelihood calculation object. The unit of which is the log of the
+following vector:
 
         / P(A|C) \
     L = | P(a|C) |
         \ P(N|C) /
 
-There is a fourth element, log(P(X|C))=0 since failed assays do not tell us any
-information about COI. To compute these elements, let B be a count of ref calls
-in the different strains.
+Where A, a and N are the events that we observe the major allele, minor allele
+or a het call at a particular assay, respectively. There is a fourth element,
+log(P(X|C))=0, where X is the event that the assay failed, since failed assays
+do not tell us any information about COI. To compute these elements, let R be a
+count of ref calls in the different strains.
 
-    B ~ Binomial(C, p), p = allele frequency of ref
+    R ~ Binomial(C, p), p = allele frequency of ref
 
-    A = I(B=C)
-    a = I(B=0)
-    N = I(B>0, B<C)
+    A = I(R=C)
+    a = I(R=0)
+    N = I(R>0, R<C)
 
-    P(A) = P(B=C) = p^C
-    P(a) = P(B=0) = (1-p)^C
+    P(A) = P(R=C) = p^C
+    P(a) = P(R=0) = (1-p)^C
     P(N) = 1 - P(A) - P(a)
 
 Since we are doing everything on a log scale, the first two equations become:
@@ -85,30 +87,50 @@ Since we are doing everything on a log scale, the first two equations become:
     log P(A) = C * log(p)
     log P(a) = C * log(1-p)
 
+=head2 add_error
+
+    my $calc_err = $calc->add_error();
+    my $calc_err = $calc->add_error( $e ); # default e=.05
+    my $calc_err = $calc->add_error( [ $e0, $e+, $e- ])
+
+One way to view how this is done is to do a matrix multiplication, in which the
+error rates specify a stochastic matrix. Given the previous calculator vector,
+we want to find
+
+         / P(A*|C) \
+    L* = | P(a*|C) |
+         \ P(N*|C) /
+
+where A*, a* and N* are the observed observations for assay. The error rate is
+a stochastic matrix
+
+    E[i][j] = P(G_i*=j|G_i=i)
+
+        / P(A*|A), P(a*|A), P(N*|A) \
+    E = | P(A*|a), P(a*|a), P(N*|a) |
+        \ P(A*|N), P(a*|N), P(N*|N) /
+
+        / 1-e, e/2, e/2 \
+      = | e/2, 1-e, e/2 |, simple error rate case
+        \ e/2, e/2, 1-e /
+
+        / 1-e0-e+, e0,      e+   \
+      = | e0     , 1-e0-e+, e+   |, a bit more complicated
+        \ e-/2   , e-/2,    1-e- /
+
+then the new calculator vector is the product:
+
+    L*' = L'E = E'L
+
 =cut
 
 =head1 METHODS
 
 =cut
 
-=head2 add_error
-
-    my $CLA_E = $CLA->add_error();
-    my $CLA_E = $CLA->add_error( $e ); # default e=.05
-    my $CLA_E = $CLA->add_error( [ $e0, $e+, $e- ])
-
-See COIL::Likelihood for an explanation of the error matrix. The likelihood
-with errors can be computed using matrix multiplication on the stochastic
-matrix.
-
-    L*' = L'E
-    L*  = E'L = EL
-
-=cut
-
 =head2 random_numeric
 
-    my $numeric = $CLA->random_numeric( $COI );
+    my $numeric = $calc->random_numeric( $COI );
 
 Generate a random numeric at a particular COI.
 
@@ -122,7 +144,7 @@ sub random_numeric {
 
 =head2 write
 
-    $CLA->write( $fh, $digits);
+    $calc->write( $fh, $digits);
 
 =cut
 
@@ -142,7 +164,7 @@ sub write {
     }
 }
 
-package COIL::Likelihood::Allele::Level;
+package COIL::Calculator::Allele::Level;
 
 # The overall likelihood object stores the likelihoods at several COIs. Each
 # one is a further object whose main purpose is to propagate and collate calls
@@ -151,14 +173,16 @@ package COIL::Likelihood::Allele::Level;
 use strict;
 use warnings;
 
-use base 'COIL::Likelihood::Level';
+our @ISA = ('COIL::Calculator::Level');
 
 use List::Util 'sum';
 use List::MoreUtils 'pairwise';
 
 sub _new_from_ps {
-    bless [ map { COIL::Likelihood::Allele::Unit->_new_from_p($_) }
-          @{ $_[1] } ], $_[0];
+    my $class = shift;
+    ( my $unit_class = $class ) =~ s/Level$/Unit/;
+
+    bless [ map { $unit_class->_new_from_p($_) } @{ $_[0] } ], $class;
 }
 
 # log L(C|G) = sum log L(C|G_i)
@@ -173,12 +197,12 @@ sub random_numeric {
     [ map { $_->random_numeric } @{ $_[0] } ];
 }
 
-package COIL::Likelihood::Allele::Unit;
+package COIL::Calculator::Allele::Unit;
 
 use strict;
 use warnings;
 
-use base 'COIL::Likelihood::Unit';
+our @ISA = ('COIL::Calculator::Unit');
 
 use List::Util 'sum';
 use List::MoreUtils 'pairwise';
@@ -239,14 +263,14 @@ sub random_numeric {
             exp( $_[0][0] ),
             exp( $_[0][1] ),
             exp( $_[0][2] )
-        )
+          )
     );
 }
 
 use overload '""' => \&to_string;
 
 sub to_string {
-    join( ':', map { exp($_) } @{ $_[0] }[ 0 .. 2 ] )
+    join( ':', map { exp($_) } @{ $_[0] }[ 0 .. 2 ] );
 }
 
 1;

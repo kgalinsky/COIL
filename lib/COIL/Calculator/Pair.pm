@@ -1,16 +1,16 @@
-package COIL::Likelihood::Pair;
+package COIL::Calculator::Pair;
 
 use strict;
 use warnings;
 
-use base 'COIL::Likelihood';
+use parent 'COIL::Calculator';
 
 use Params::Validate;
 use COIL::Validate ':val';
 
 =head1 NAME
 
-COIL::Likelihood::Pair
+COIL::Calculator::Pair
 
 =head1 SYNOPSIS
 
@@ -20,19 +20,20 @@ COIL::Likelihood::Pair
 
 =cut
 
-package COIL::Likelihood::Pair::Level;
+package COIL::Calculator::Pair::Level;
 
 use strict;
 use warnings;
 
-use base qw/ COIL::Pair COIL::Likelihood::Level /;
+our @ISA = 'COIL::Calculator::Level';
+use parent 'COIL::Pair';
 
 use List::MoreUtils 'pairwise';
 
 sub _new_from_Ps {
     my $class = shift;
     my ($Ps) = @_;
-    bless [ map { COIL::Likelihood::Pair::Unit->_new_from_P($_) } @$Ps ],
+    bless [ map { COIL::Calculator::Pair::Unit->_new_from_P($_) } @$Ps ],
       $class;
 }
 
@@ -53,12 +54,12 @@ sub _numeric_likelihood {
     return $l / $#$numeric;
 }
 
-package COIL::Likelihood::Pair::Unit;
+package COIL::Calculator::Pair::Unit;
 
 use strict;
 use warnings;
 
-use base 'COIL::Likelihood::Unit';
+our @ISA = ('COIL::Calculator::Unit');
 
 sub _new_from_tally { $_[0]->_new_from_P( $_[1]->P( $_[2] ) ) }
 
