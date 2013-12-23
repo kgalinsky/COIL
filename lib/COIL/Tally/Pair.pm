@@ -3,14 +3,19 @@ package COIL::Tally::Pair;
 use strict;
 use warnings;
 
-use base 'COIL::Pair';
+use parent 'COIL::Pair';
 
 use Params::Validate;
 use COIL::Validate ':val';
 
 =head1 NAME
 
+COIL::Tally::Pair - tally pairs of alleles in barcodes
+
 =head1 SYNOPSIS
+
+    my $tally    = COIL::Tally::Pair->new_from_numerics( \@numerics );
+    my $p_values = $tally->fisher();
 
 =cut
 
@@ -20,11 +25,9 @@ use COIL::Validate ':val';
 
 =head2 new_from_numerics
 
-    my $CTP = COIL::Tally::Pair->new_from_numerics( \@numerics );
+    my $tally = COIL::Tally::Pair->new_from_numerics( \@numerics );
 
 =cut
-
-# $CTP->[$k] = [ [ $NN_ij, $Nn_ij ], [ $nN_ij, $nn_ij ] ]
 
 sub new_from_numerics {
     my $class = shift;
@@ -62,37 +65,15 @@ sub new_from_numerics {
 
 =head2 fisher
 
-    my $p_values = $CTP->fisher();
+    my $p_values = $tally->fisher();
 
-Perform Fisher's exact test on on each pair of SNPs. p-values are stored in a
-2D symmetrical matrix with undef on the diagonal.
+Perform Fisher's exact test on on each pair of SNPs. They are returned in the
+same order as this object as well as what is specified in COIL::Pair.
 
 =cut
 
-use Text::NSP::Measures::2D::Fisher::twotailed;
-
 sub fisher {
-    my $self = shift;
-    return bless [
-        map {
-            my $n11 = $_->[0][0];
-            my $n12 = $_->[0][1];
-            my $n21 = $_->[1][0];
-            my $n22 = $_->[1][1];
-
-            my $n1p = $n11 + $n12;
-            my $np1 = $n11 + $n21;
-            my $npp = $n11 + $n12 + $n21 + $n22;
-
-            Text::NSP::Measures::2D::Fisher::twotailed::calculateStatistic(
-                n11 => $n11,
-                n1p => $n1p,
-                np1 => $np1,
-                npp => $npp
-            );
-        } @$self
-      ],
-      'COIL::Pair';
+    return bless [ map { $_->fisher() } @{ $_[0] } ], 'COIL::Pair';
 }
 
 package COIL::Tally::Pair::Unit;
@@ -121,6 +102,26 @@ sub P {
         [ ( $_[0][0][0] + $_[1] ) / $total, ( $_[0][0][1] + $_[1] ) / $total ],
         [ ( $_[0][1][0] + $_[1] ) / $total, ( $_[0][1][1] + $_[1] ) / $total ]
     ];
+}
+
+use Text::NSP::Measures::2D::Fisher::twotailed;
+
+sub fisher {
+    my $n11 = $_->[0][0][0];
+    my $n12 = $_->[0][0][1];
+    my $n21 = $_->[0][1][0];
+    my $n22 = $_->[0][1][1];
+
+    my $n1p = $n11 + $n12;
+    my $np1 = $n11 + $n21;
+    my $npp = $n11 + $n12 + $n21 + $n22;
+
+    Text::NSP::Measures::2D::Fisher::twotailed::calculateStatistic(
+        n11 => $n11,
+        n1p => $n1p,
+        np1 => $np1,
+        npp => $npp
+    );
 }
 
 1;
