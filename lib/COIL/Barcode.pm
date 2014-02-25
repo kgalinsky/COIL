@@ -12,7 +12,8 @@ COIL::Barcode - interact with barcodes
 
 =head1 SYNOPSIS
 
-    my $barcodes = COIL::Barcode->read( $filename_or_filehandle );
+    my $barcodes = COIL::Barcodes->read( $filename_or_filehandle );
+    my ( $barcodes, $lines ) = COIL::Barcodes->read( $filename_or_filehandle );
     my $numerics = $barcodes->to_numeric( \@major_alleles );
     foreach my $numeric ( @$numerics ) { print "$numeric\n" }
 
@@ -49,11 +50,13 @@ Create a barcode or numeric from a barcode or numeric string.
 
     my $barcodes = COIL::Barcodes->read($filename);
     my $barcodes = COIL::Barcodes->read($filehandle);
+    my ( $barcodes, $lines ) = COIL::Barcodes->read($filename);
     
     my $numerics = COIL::Numerics->read( $filename_or_filehandle );
 
 Read barcodes from file. Creates an object of the plural class, which is a
-container.
+container. If called in array context, it will also return the lines of the
+file.
 
 =cut
 
@@ -134,7 +137,10 @@ sub read {
     my $class = shift;
     ( my $singular = $class ) =~ s/s$//;
     my $lines = grab_lines( \@_ );
-    $class->new( [ map { $singular->new_str( (split)[-1] ) } @$lines ] );
+    my $self =
+      $class->new( [ map { $singular->new_str( (split)[-1] ) } @$lines ] );
+
+    return wantarray ? ( $self, $lines ) : $self;
 }
 
 sub write {
