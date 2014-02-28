@@ -66,6 +66,25 @@ file.
 
 =cut
 
+=head2 num_het
+
+=head2 num_fail
+
+=head2 eff_len
+
+=head2 stats
+
+=cut
+
+sub eff_len {
+    return scalar( @{ $_[0] } ) - $_[0]->num_fail;
+}
+
+sub stats {
+    my $fail = $_[0]->num_fail;
+    return [ $_[0]->num_het, $fail, scalar( @{ $_[0] } ) - $fail ]
+}
+
 =head2 to_string
 
     print $barcode->to_string();
@@ -197,6 +216,11 @@ use warnings;
 use Params::Validate;
 use COIL::Validate ':val';
 
+#<<< define num_het and num_fail 
+sub num_het  { return scalar grep { $_ == 2 } @{ $_[0] } }
+sub num_fail { return scalar grep { $_ == 3 } @{ $_[0] } }
+#>>>
+
 sub to_barcode {
     my $self = shift;
 
@@ -240,6 +264,12 @@ sub new_str {
 }
 
 # METHODS
+
+#<<< define num_het and num_fail 
+sub num_het  { return scalar grep { $_ eq 'N' } @{ $_[0] } }
+sub num_fail { return scalar grep { $_ eq 'X' } @{ $_[0] } }
+#>>>
+
 sub _add_assay_failures {
     my ( $self, $failure_rate ) = @_;
     ref($self)->new( [ map { rand() < $failure_rate ? 'X' : $_ } @$self ] );
