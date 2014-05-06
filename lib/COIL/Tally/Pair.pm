@@ -66,7 +66,7 @@ sub new_from_numerics {
 
 =cut
 
-=head2 fisher
+=head2 Fisher
 
     my $p_values = $tally->fisher();
 
@@ -75,8 +75,8 @@ same order as this object as well as what is specified in COIL::Pair.
 
 =cut
 
-sub fisher {
-    return bless [ map { $_->fisher() } @{ $_[0] } ], 'COIL::Pair';
+sub Fisher {
+    return bless [ map { $_->Fisher() } @{ $_[0] } ], 'COIL::Pair';
 }
 
 package COIL::Tally::Pair::Unit;
@@ -109,7 +109,7 @@ sub P {
 
 use Text::NSP::Measures::2D::Fisher::twotailed;
 
-sub fisher {
+sub Fisher {
     my $n11 = $_[0]->[0][0];
     my $n12 = $_[0]->[0][1];
     my $n21 = $_[0]->[1][0];
