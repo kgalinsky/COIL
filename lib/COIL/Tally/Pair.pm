@@ -79,6 +79,10 @@ sub Fisher {
     return bless [ map { $_->Fisher() } @{ $_[0] } ], 'COIL::Pair';
 }
 
+sub r2 {
+    return bless [ map { $_->r2() } @{ $_[0] } ], 'COIL::Pair';
+}
+
 package COIL::Tally::Pair::Unit;
 
 use strict;
@@ -125,6 +129,23 @@ sub Fisher {
         np1 => $np1,
         npp => $npp
     );
+}
+
+sub r2 {
+    my ( $a, $b ) = @{ $_[0][0] };
+    my ( $c, $d ) = @{ $_[0][1] };
+
+    my $ab = $a + $b;
+    my $ac = $a + $c;
+    my $N  = $a + $b + $c + $d;
+
+    my $pa  = $ab / $N;
+    my $pb  = $ac / $N;
+    my $pab = $a / $N;
+
+    my $num = ( $pab - $pa * $pb ) ** 2;
+    my $den = $pa * ( 1 - $pa ) * $pb * ( 1 - $pb );
+    return $den == 0 ? "$num/$den" : $num / $den;
 }
 
 1;
