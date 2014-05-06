@@ -31,7 +31,10 @@ COIL::Tally::Pair - tally pairs of alleles in barcodes
 
 sub new_from_numerics {
     my $class = shift;
-    my ($numerics) = validate_pos( @_, $VAL_NUMERICS );
+    my ( $numerics, @p ) = validate_pos( @_, $VAL_NUMERICS,
+        { default => {}, type => Params::Validate::HASHREF } );
+    my %p = validate( @p, { skip_poly => { default => 1 } } );
+    my $skip_poly = $p{skip_poly};
 
     my $n = $#{ $numerics->[0] };
     my $self =
@@ -39,18 +42,18 @@ sub new_from_numerics {
       $class;
 
     foreach my $numeric (@$numerics) {
-        next if ( grep { $_ == 2 } @$numeric );    # skip if barcode is poly
+        next if ( $skip_poly && grep { $_ == 2 } @$numeric );
 
         # iterate through each SNP
         for ( my $i = 1 ; $i < @$numeric ; $i++ ) {
             my $ni = $numeric->[$i];
-            next if ( $ni == 3 );                  # skip failed assays
+            next if ( $ni > 1 );    # skip het/failed assays
 
             my $offset = $i * ( $i - 1 ) / 2;
 
             for ( my $j = 0 ; $j < $i ; $j++ ) {
                 my $nj = $numeric->[$j];
-                next if ( $nj == 3 );              # skip failed assays
+                next if ( $nj > 1 );    # skip het/failed assays
                 $self->[ $offset + $j ][$ni][$nj]++;
             }
         }
