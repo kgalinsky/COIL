@@ -79,8 +79,28 @@ sub Fisher {
     return bless [ map { $_->Fisher() } @{ $_[0] } ], 'COIL::Pair';
 }
 
+=head2 r2
+
+    my $r2_values = $tally->r2();
+
+Calculate the r^2.
+
+=cut
+
 sub r2 {
     return bless [ map { $_->r2() } @{ $_[0] } ], 'COIL::Pair';
+}
+
+=head2 Dprime
+
+    my $Dp_values = $tally->Dprime();
+
+Calculate D'.
+
+=cut
+
+sub Dprime {
+    return bless [ map { $_->Dprime() } @{ $_[0] } ], 'COIL::Pair';
 }
 
 package COIL::Tally::Pair::Unit;
@@ -145,6 +165,24 @@ sub r2 {
 
     my $num = ( $pab - $pa * $pb ) ** 2;
     my $den = $pa * ( 1 - $pa ) * $pb * ( 1 - $pb );
+    return $den == 0 ? "$num/$den" : $num / $den;
+}
+
+sub Dprime {
+    my ( $a, $b ) = @{ $_[0][0] };
+    my ( $c, $d ) = @{ $_[0][1] };
+
+    my $ab = $a + $b;
+    my $ac = $a + $c;
+    my $N  = $a + $b + $c + $d;
+
+    my $pa   = $ab / $N;
+    my $pb   = $ac / $N;
+    my $pab  = $a / $N;
+    my $papb = $pa*$pb;
+
+    my $num = $pab - $pa * $pb;
+    my $den = ($pa < $pb ? $pa : $pb) - $papb;
     return $den == 0 ? "$num/$den" : $num / $den;
 }
 
