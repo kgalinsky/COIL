@@ -61,7 +61,7 @@ sub write {
 
     my ( $i, $j ) = ( 1, 0 );
     foreach my $t (@$self) {
-        print $i, $j, $t;
+        print $fh $i, $j, $t;
 
         $j++;
         if ( $i == $j ) { $i++; $j = 0; }
